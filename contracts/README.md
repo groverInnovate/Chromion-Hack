@@ -69,4 +69,4 @@ The agent contract represents an individual trading instance that:
 - Reentrancy protection is implemented
 - Owner-only controls for sensitive operations
 - Pausable functionality for emergency situations
-- Signature-based authorization for trades 
+- Signature-based authorization for trades
