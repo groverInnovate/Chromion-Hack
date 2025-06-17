@@ -11,6 +11,8 @@ contract AgentFactory {
     error Factory__PlatformNotAvailable();
     error Factory__AmountIsZero();
 
+    event Factory__AgentCreated();
+
     enum PlatformType {
         Twitter,
         Telegram,
@@ -42,7 +44,7 @@ contract AgentFactory {
             revert Factory__AmountIsZero();
         }
 
-        Agent agent = new Agent(_tokens, _platformType);
+        Agent agent = new Agent{value: msg.value}(_tokens, _platformType);
 
         AgentInfo memory info = AgentInfo({
             agentAddress: address(agent),
@@ -55,6 +57,7 @@ contract AgentFactory {
 
         userToAgents[msg.sender].push(info);
         userToNumberOfAgents[msg.sender] += 1;
+        emit Factory__AgentCreated();
     }   
 
     function getNumberofAgentsForUser(address user) external view returns(uint256) {
