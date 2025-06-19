@@ -227,6 +227,8 @@ contract Agent is ReentrancyGuard {
             revert Agent__IncorrectSignature();
         }
 
+        // swapping logic due
+
         noncesUsed[data.nonce] = true;
 
         emit Agent__TradeExecuted(

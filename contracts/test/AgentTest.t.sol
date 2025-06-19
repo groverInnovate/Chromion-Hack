@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
 import {AgentFactory} from "../src/AgentFactory.sol";
 import {Agent} from "../src/Agent.sol";
 import {DeployAgent} from "../script/DeployAgent.s.sol";
@@ -14,11 +14,35 @@ contract AgentTest is Test {
     address public authorizedSigner = makeAddr("authorizedSigner");
     address public owner = makeAddr("owner");
     uint256 public constant INITIAL_BALANCE = 10 ether;
+    uint256 private signerPrivateKey;
+
+    Agent.TradeData testTradeData;
+    bytes32 constant DOMAIN_SEPARATOR_TYPEHASH =
+        keccak256(
+            "EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"
+        );
+    bytes32 constant TRADE_DATA_TYPEHASH =
+        keccak256(
+            "TradeData(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut, uint256 maxAmountOut, uint256 deadline, uint256 nonce)"
+        );
 
     function setUp() external {
+        signerPrivateKey = 0xA11CE;
+        authorizedSigner = vm.addr(signerPrivateKey);
+
         deployer = new DeployAgent();
         vm.deal(owner, INITIAL_BALANCE);
-        (factory, agent) = deployer.run();
+        (factory, agent) = deployer.run(authorizedSigner);
+
+        testTradeData = Agent.TradeData({
+            tokenIn: makeAddr("token1"),
+            tokenOut: makeAddr("token2"),
+            amountIn: 1 ether,
+            minAmountOut: 0.9 ether,
+            maxAmountOut: 1.1 ether,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1
+        });
     }
 
     function testCreatedAgent() external {
@@ -134,5 +158,183 @@ contract AgentTest is Test {
             userFinalBalance - userInitialBalance,
             agentInitialBalance - agentFinalBalance
         );
+    }
+
+    function testDomainSeparator() external view {
+        bytes32 expectedDomainSeparator = keccak256(
+            abi.encode(
+                DOMAIN_SEPARATOR_TYPEHASH,
+                keccak256(bytes("Agent")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(agent)
+            )
+        );
+        assertEq(agent.getDomainSeparator(), expectedDomainSeparator);
+    }
+
+    // function testExecuteSwapWithValidSignature() external {
+    //     address token1 = makeAddr("token1");
+    //     address token2 = makeAddr("token2");
+    //     Agent.TradeData memory trade = Agent.TradeData({
+    //         tokenIn: token1,
+    //         tokenOut: token2,
+    //         amountIn: 1,
+    //         minAmountOut: 1,
+    //         maxAmountOut: 2,
+    //         deadline: block.timestamp + 1 hours,
+    //         nonce: 1001
+    //     });
+
+    //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+    //     vm.startPrank(authorizedSigner);
+    //     agent.executeSwap(trade, sig);
+    //     vm.stopPrank();
+    // }
+
+    function testExecuteSwapWithInvalidSignature() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1002
+        });
+
+        uint256 wrongKey = 0xB0B;
+        bytes memory sig = _signTradeData(trade, wrongKey);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(Agent.Agent__IncorrectSignature.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testExecuteSwapWithExpiredDeadline() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2,
+            deadline: block.timestamp - 1,
+            nonce: 1003
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(Agent.Agent__DeadlinePassed.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testExecuteSwapWithInvalidSignatureLength() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1004
+        });
+
+        bytes memory sig = new bytes(64);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(Agent.Agent__IncorrectSignatureLength.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    // function testExecuteSwapWithUsedNonce() external {
+    //     address token1 = makeAddr("token1");
+    //     address token2 = makeAddr("token2");
+    //     Agent.TradeData memory trade = Agent.TradeData({
+    //         tokenIn: token1,
+    //         tokenOut: token2,
+    //         amountIn: 1,
+    //         minAmountOut: 1,
+    //         maxAmountOut: 2,
+    //         deadline: block.timestamp + 1 hours,
+    //         nonce: 1005
+    //     });
+
+    //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+    //     vm.startPrank(authorizedSigner);
+    //     agent.executeSwap(trade, sig);
+    //     vm.expectRevert(Agent.Agent__NonceAlreadyUsed.selector);
+    //     agent.executeSwap(trade, sig);
+    //     vm.stopPrank();
+    // }
+
+    function testSignTradeDataProducesCorrectDigest() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2, 
+            deadline: block.timestamp + 1 hours,
+            nonce: 12345
+        });
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                TRADE_DATA_TYPEHASH,
+                trade.tokenIn,
+                trade.tokenOut,
+                trade.amountIn,
+                trade.minAmountOut,
+                trade.maxAmountOut,
+                trade.deadline,
+                trade.nonce
+            )
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", agent.getDomainSeparator(), structHash)
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signerPrivateKey, digest);
+        bytes memory expectedSignature = abi.encodePacked(r, s, v);
+
+        bytes memory helperSignature = _signTradeData(trade, signerPrivateKey);
+
+        assertEq(helperSignature, expectedSignature);
+    }
+
+    function _signTradeData(
+        Agent.TradeData memory data,
+        uint256 privateKey
+    ) internal view returns (bytes memory) {
+        bytes32 structHash = keccak256(
+            abi.encode(
+                TRADE_DATA_TYPEHASH,
+                data.tokenIn,
+                data.tokenOut,
+                data.amountIn,
+                data.minAmountOut,
+                data.maxAmountOut,
+                data.deadline,
+                data.nonce
+            )
+        );
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", agent.getDomainSeparator(), structHash)
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+        return abi.encodePacked(r, s, v);
     }
 }

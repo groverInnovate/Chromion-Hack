@@ -7,11 +7,10 @@ import {Agent} from "../src/Agent.sol";
 import {Platform} from "../src/PlatformType.sol";
 
 contract DeployAgent is Script {
-    address authorizedSigner = makeAddr("authorizedSigner");
     address owner = makeAddr("owner");
     uint256 constant INITIAL_BALANCE = 10 ether;
 
-    function run() external returns (AgentFactory, Agent) {
+    function run(address authorizedSigner) external returns (AgentFactory, Agent) {
         vm.startBroadcast(owner);
         vm.deal(owner, INITIAL_BALANCE);
         AgentFactory factory = new AgentFactory();
