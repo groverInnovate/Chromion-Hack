@@ -2,12 +2,15 @@
 pragma solidity 0.8.20;
 
 import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+import {ECDSA} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {Platform} from "./PlatformType.sol";
 
 /// @title Agent Contract
 /// @notice This contract represents an individual trading agent that can execute trades based on authorized signatures
 /// @dev Implements ReentrancyGuard for security against reentrancy attacks
 contract Agent is ReentrancyGuard {
-    error Agent__LengthCannotBeZero();
+    using ECDSA for bytes32;
+
     error Agent__NotOwner();
     error Agent__AlreadyPaused();
     error Agent__AlreadyRunning();
@@ -19,13 +22,6 @@ contract Agent is ReentrancyGuard {
     error Agent__InvalidTokens();
     error Agent__InsufficientBalance();
     error Agent__NotAuthorized();
-
-    /// @notice Enum representing different platform types supported by the agent
-    enum PlatformType {
-        Twitter,
-        Telegram,
-        Discord
-    }
 
     /// @notice Structure to hold trade data for execution
     /// @param tokenIn Address of the input token
@@ -45,12 +41,12 @@ contract Agent is ReentrancyGuard {
         uint256 nonce;
     }
 
-    // mapping(uint256 nonce => bool) noncesUsed;
+    mapping(uint256 nonce => bool) noncesUsed;
     /// @notice Mapping to track which tokens are supported by this agent
     mapping(address token => bool) public tokensPresent;
 
     /// @notice The platform type this agent is associated with
-    PlatformType public platformType;
+    Platform public platformType;
 
     /// @notice The owner address of this agent
     address owner; // address of the user
@@ -61,27 +57,26 @@ contract Agent is ReentrancyGuard {
     /// @notice The authorized signer address that can execute trades
     address immutable authorizedSigner; // address of the psuedo wallet created for the backend which will execute the swap function
 
-    // string private constant name = "Agent";
-    // string private constant version = "1";
-    // uint256 immutable chainId;
-    // address immutable verifyingContract;
+    string private constant name = "Agent";
+    string private constant version = "1";
+    uint256 immutable chainId;
+    address immutable verifyingContract;
 
-    // bytes32 private constant EIP_712_DOMAIN_HASH =
-    //     keccak256(
-    //         "EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"
-    //     );
-    // bytes32 private DOMAIN_SEPARATOR;
+    bytes32 private constant DOMAIN_HASH =
+        keccak256(
+            "EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"
+        );
+    bytes32 private DOMAIN_SEPARATOR;
 
-    // bytes32 private constant TYPE_HASH =
-    //     keccak256(
-    //         "TradeData(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut, uint256 maxAmountOut, uint256 deadline, uint256 nonce)"
-    //     );
+    bytes32 private constant TYPE_HASH =
+        keccak256(
+            "TradeData(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut, uint256 maxAmountOut, uint256 deadline, uint256 nonce)"
+        );
 
     event Agent__AgentPaused();
     event Agent__AgentRestarted();
     event Agent__FundsWithdrawan(address indexed user, uint256 amountWithdrawn);
-    event Agent__TokensUpdated(address[] indexed tokens);
-    event Agent__TradeVerified(
+    event Agent__TradeExecuted(
         address indexed user,
         address indexed tokenIn,
         address indexed tokenOut,
@@ -111,7 +106,7 @@ contract Agent is ReentrancyGuard {
 
     constructor(
         address[] memory _tokens,
-        PlatformType _platformType,
+        Platform _platformType,
         address _authorizedSigner,
         address _owner
     ) payable {
@@ -121,17 +116,17 @@ contract Agent is ReentrancyGuard {
         platformType = _platformType;
         owner = _owner;
         authorizedSigner = _authorizedSigner;
-        // chainId = block.chainid;
-        // verifyingContract = address(this);
-        // DOMAIN_SEPARATOR = keccak256(
-        //     abi.encode(
-        //         EIP_712_DOMAIN_HASH,
-        //         keccak256(bytes(name)),
-        //         keccak256(bytes(version)),
-        //         chainId,
-        //         verifyingContract
-        //     )
-        // );
+        chainId = block.chainid;
+        verifyingContract = address(this);
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                DOMAIN_HASH,
+                keccak256(bytes(name)),
+                keccak256(bytes(version)),
+                chainId,
+                verifyingContract
+            )
+        );
     }
 
     /// @notice Pauses the agent, preventing any new trades
@@ -165,103 +160,82 @@ contract Agent is ReentrancyGuard {
         emit Agent__FundsWithdrawan(msg.sender, balance);
     }
 
-    // function hashTradeData(
-    //     TradeData memory data
-    // ) internal pure returns (bytes32) {
-    //     return
-    //         keccak256(
-    //             abi.encode(
-    //                 TYPE_HASH,
-    //                 data.tokenIn,
-    //                 data.tokenOut,
-    //                 data.amountIn,
-    //                 data.minAmountOut,
-    //                 data.maxAmountOut,
-    //                 data.deadline,
-    //                 data.nonce
-    //             )
-    //         );
-    // }
+    function hashTradeData(
+        TradeData memory data
+    ) internal pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    TYPE_HASH,
+                    data.tokenIn,
+                    data.tokenOut,
+                    data.amountIn,
+                    data.minAmountOut,
+                    data.maxAmountOut,
+                    data.deadline,
+                    data.nonce
+                )
+            );
+    }
 
-    // function verifySignature(
-    //     TradeData memory data,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public view returns (bool) {
-    //     bytes32 digest = calculateDigest(data);
+    function verifySignature(
+        TradeData memory data,
+        bytes calldata signature
+    ) internal view returns (bool) {
+        bytes32 digest = calculateDigest(data);
+        address signer = digest.recover(signature);
+        return signer == authorizedSigner;
+    }
 
-    //     address signer = ecrecover(digest, v, r, s);
-    //     bool result = signer == authorizedSigner;
-    //     return result;
-    // }
+    function calculateDigest(
+        TradeData memory data
+    ) internal view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode("\x19\x01", DOMAIN_SEPARATOR, hashTradeData(data))
+            );
+    }
 
-    // function calculateDigest(
-    //     TradeData memory data
-    // ) internal view returns (bytes32) {
-    //     return
-    //         keccak256(
-    //             abi.encode("\x19\x01", DOMAIN_SEPARATOR, hashTradeData(data))
-    //         );
-    // }
+    function executeSwap(
+        TradeData memory data,
+        bytes calldata signature
+    ) external nonReentrant onlyAuthorized {
+        if (block.timestamp > data.deadline) {
+            revert Agent__DeadlinePassed();
+        }
+        if (noncesUsed[data.nonce] == true) {
+            revert Agent__NonceAlreadyUsed();
+        }
 
-    // function executeSwap(
-    //     TradeData memory data,
-    //     bytes calldata signature
-    // ) external nonReentrant onlyAuthorized {
-    //     if (block.timestamp > data.deadline) {
-    //         revert Agent__DeadlinePassed();
-    //     }
-    //     if (noncesUsed[data.nonce] == true) {
-    //         revert Agent__NonceAlreadyUsed();
-    //     }
+        if (signature.length != 65) {
+            revert Agent__IncorrectSignatureLength();
+        }
 
-    //     if (signature.length != 65) {
-    //         revert Agent__IncorrectSignatureLength();
-    //     }
+        if (
+            tokensPresent[data.tokenIn] == false ||
+            tokensPresent[data.tokenOut] == false
+        ) {
+            revert Agent__InvalidTokens();
+        }
 
-    //     bool tokenInFound = false;
-    //     bool tokenOutFound = false;
-    //     for (uint256 i = 0; i < tokens.length; i++) {
-    //         if (tokens[i] == data.tokenIn) {
-    //             tokenInFound = true;
-    //         }
-    //         if (tokens[i] == data.tokenOut) {
-    //             tokenOutFound = true;
-    //         }
-    //     }
-    //     if (!tokenInFound || !tokenOutFound) {
-    //         revert Agent__InvalidTokens();
-    //     }
+        if (data.amountIn > address(this).balance) {
+            revert Agent__InsufficientBalance();
+        }
 
-    //     if (data.amountIn > address(this).balance) {
-    //         revert Agent__InsufficientBalance();
-    //     }
+        bool valid = verifySignature(data, signature);
+        if (!valid) {
+            revert Agent__IncorrectSignature();
+        }
 
-    //     bytes32 r;
-    //     bytes32 s;
-    //     uint8 v;
+        noncesUsed[data.nonce] = true;
 
-    //     assembly {
-    //         r := calldataload(add(signature.offset, 0))
-    //         s := calldataload(add(signature.offset, 32))
-    //         v := byte(0, calldataload(add(signature.offset, 64)))
-    //     }
-
-    //     bool valid = verifySignature(data, v, r, s);
-    //     if (!valid) {
-    //         revert Agent__IncorrectSignature();
-    //     }
-
-    //     noncesUsed[data.nonce] = true;
-
-    //     emit Agent__TradeVerified(
-    //         msg.sender,
-    //         data.tokenIn,
-    //         data.tokenOut,
-    //         data.amountIn
-    //     );
-    // }
+        emit Agent__TradeExecuted(
+            msg.sender,
+            data.tokenIn,
+            data.tokenOut,
+            data.amountIn
+        );
+    }
 
     /// @notice Returns the current balance of the agent
     /// @return The current balance in wei
@@ -275,11 +249,11 @@ contract Agent is ReentrancyGuard {
         return authorizedSigner;
     }
 
-    // function isNonceUsed(uint256 nonce) external view returns (bool) {
-    //     return noncesUsed[nonce];
-    // }
+    function isNonceUsed(uint256 nonce) external view returns (bool) {
+        return noncesUsed[nonce];
+    }
 
-    // function getDomainSeparator() external view returns (bytes32) {
-    //     return DOMAIN_SEPARATOR;
-    // }
+    function getDomainSeparator() external view returns (bytes32) {
+        return DOMAIN_SEPARATOR;
+    }
 }

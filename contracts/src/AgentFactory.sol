@@ -2,10 +2,12 @@
 pragma solidity 0.8.20;
 
 import {Agent} from "./Agent.sol";
+import {Platform} from "./PlatformType.sol";
 
 /// @title AgentFactory Contract
 /// @notice Factory contract for creating and managing trading agents
 /// @dev Creates new Agent instances and maintains a registry of all created agents
+
 contract AgentFactory {
     error Factory__NoTokenPresent();
     error Factory__PlatformNotAvailable();
@@ -22,7 +24,7 @@ contract AgentFactory {
         address owner;
         address[] tokens;
         uint256 amountInvested;
-        Agent.PlatformType platformType;
+        Platform platformType;
     }
 
     /// @notice Mapping of user addresses to their created agents
@@ -33,7 +35,7 @@ contract AgentFactory {
     /// @param platform The platform type associated with the agent
     event Factory__AgentCreated(
         address indexed agentAddress,
-        Agent.PlatformType indexed platform
+        Platform indexed platform
     );
 
     /// @notice Creates a new trading agent
@@ -43,9 +45,9 @@ contract AgentFactory {
     /// @dev Requires a non-zero ETH value to be sent with the transaction
     function createAgent(
         address[] memory _tokens,
-        Agent.PlatformType _platformType,
+        Platform _platformType,
         address authorizedSigner // address of the psuedo wallet created for the backend which will execute the swap function
-    ) external payable {
+    ) external payable returns (Agent) {
         if (_tokens.length == 0) {
             revert Factory__NoTokenPresent();
         }
@@ -73,16 +75,39 @@ contract AgentFactory {
 
         userToAgents[msg.sender].push(info);
         emit Factory__AgentCreated(msg.sender, _platformType);
+        return agent;
+    }
+
+    function getAgentInfo(
+        address user,
+        uint256 index
+    )
+        external
+        view
+        returns (
+            address agentAddress,
+            address owner,
+            address[] memory tokens,
+            uint256 amountInvested,
+            Platform platformType
+        )
+    {
+        AgentInfo storage info = userToAgents[user][index];
+        return (
+            info.agentAddress,
+            info.owner,
+            info.tokens,
+            info.amountInvested,
+            info.platformType
+        );
     }
 
     /// @notice Internal function to validate platform type
     /// @param platform The platform type to validate
     /// @return bool True if the platform is valid, false otherwise
-    function isValidPlatform(
-        Agent.PlatformType platform
-    ) internal pure returns (bool) {
-        return (platform == Agent.PlatformType.Telegram ||
-            platform == Agent.PlatformType.Twitter ||
-            platform == Agent.PlatformType.Discord);
+    function isValidPlatform(Platform platform) internal pure returns (bool) {
+        return (platform == Platform.Telegram ||
+            platform == Platform.Twitter ||
+            platform == Platform.Discord);
     }
 }
