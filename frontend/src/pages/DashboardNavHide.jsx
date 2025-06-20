@@ -7,6 +7,7 @@ const DashboardBackground = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
+    const closeSidebar = () => setIsSidebarOpen(false);
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-[#0c0116] via-[#000A17] to-[#012437] overflow-hidden">
@@ -26,7 +27,7 @@ const DashboardBackground = () => {
             <div className="relative z-10 w-full flex min-h-screen">
 
                 {/* Sidebar (toggle visibility) */}
-                <Sidebar isOpen={isSidebarOpen} />
+                <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
                 <div className="flex-1 flex flex-col justify-between">
                     <Navbar toggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />

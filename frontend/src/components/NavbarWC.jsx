@@ -1,17 +1,13 @@
 import React from 'react';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars, } from 'react-icons/fa';
 
-const Navbar = ({ toggleSidebar, isSidebarOpen }) => {
+const Navbar = ({ toggleSidebar }) => {
   return (
     <nav className="flex justify-between items-center px-6 py-4 border-b border-white/10">
       <div className="flex items-center space-x-4">
         {/* Toggle Button for Sidebar */}
         <button onClick={toggleSidebar} className="text-white text-xl ">
-
-          {isSidebarOpen
-            ? <FaTimes className="transition duration-300" />
-            : <FaBars className="transition duration-300" />
-          }
+          <FaBars/>
         </button>
         <span className="text-white font-bold text-xl hidden ">LOGO</span>
       </div>
