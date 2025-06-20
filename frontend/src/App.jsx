@@ -1,11 +1,12 @@
 import './App.css';
-import Footer from './components/Footer'
+import HomePage from './pages/HomePage';
+import DashboardBackground from './pages/DashboardNavHide';
 
 function App() {
 
   return (
     <>
-      <Footer />
+      <DashboardBackground/>
     </>
   )
 }
