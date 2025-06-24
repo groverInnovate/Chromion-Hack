@@ -1,4 +1,3 @@
-import './App.css';
 import HomePage from './pages/HomePage';
 import CreateAgentPage from './pages/CreateAgent';
 import ProfilePage from './pages/Profile';

@@ -7,10 +7,8 @@ const ProfilePage = () => {
         <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden relative">
             <Navbar />
 
-            {/* Background glow */}
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[200px] bg-[#b8aee5] opacity-90 blur-[180px] rounded-full z-0" />
 
-            {/*glowing sphere */}
             <div className="absolute bottom-0 left-40 transform translate-x-[-20%] translate-y-[40%] z-[1]">
                 <div className="relative">
                     {/* Main sphere */}
@@ -61,9 +59,7 @@ const ProfilePage = () => {
                 </div>
             </div>
 
-            {/* Main Profile Section */}
             <main className="flex-grow flex items-center justify-center pt-32 pb-20 relative z-10 px-4">
-                {/* Small glowing sphere */}
                 <div className="absolute top-[120px] md:top-[80px] left-[280px] md:left-[1200px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
                     <div className="relative">
                         {/* Main small sphere */}
@@ -106,7 +102,6 @@ const ProfilePage = () => {
                 </div>
                 <div className="w-full max-w-6xl bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-10 text-white shadow-xl flex flex-col md:flex-row gap-10">
 
-                    {/* Left: Avatar + Basic Info */}
                     <div className="flex flex-col items-center md:items-start text-center md:text-left gap-4 md:w-1/3">
                         <img
                             src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=avatar"
@@ -131,9 +126,7 @@ const ProfilePage = () => {
                         </a>
                     </div>
 
-                    {/* Right: Details */}
                     <div className="flex-1 space-y-6 text-white/90 text-[20px] text-sm">
-                        {/* Bio */}
                         <div>
                             <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Bio</h3>
                             <p className="leading-relaxed ">
@@ -142,7 +135,6 @@ const ProfilePage = () => {
                             </p>
                         </div>
 
-                        {/* Preferences */}
                         <div>
                             <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Preferences</h3>
                             <ul className="list-disc list-inside leading-relaxed">
@@ -152,7 +144,6 @@ const ProfilePage = () => {
                             </ul>
                         </div>
 
-                        {/* More Info (Optional placeholder) */}
                         <div>
                             <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Your Agents</h3>
                             <p className="text-white/70 italic">No agents created yet.</p>

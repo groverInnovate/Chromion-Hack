@@ -7,10 +7,8 @@ const CreateAgentPage = () => {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hiddenrelative">
       <Navbar />
 
-      {/* Background glow */}
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[200px] bg-[#b8aee5] opacity-80 blur-[180px] rounded-full z-0" />
 
-      {/* Left bottom glowing sphere */}
       <div className="absolute bottom-0 left-0 transform translate-x-[-20%] translate-y-[40%] z-[1]">
         <div className="relative">
           {/* Main sphere */}
@@ -61,10 +59,8 @@ const CreateAgentPage = () => {
         </div>
       </div>
 
-      {/* Main content */}
       <main className="flex-grow flex flex-col items-center justify-center px-4 pt-36 pb-20 relative z-10">
 
-        {/* Small glowing sphere */}
         <div className="absolute top-[120px] md:top-[290px] left-[280px] md:left-[1150px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
           <div className="relative">
             {/* Main small sphere */}
@@ -113,7 +109,6 @@ const CreateAgentPage = () => {
           Design, describe and deploy your autonomous agent with ease.
         </p>
 
-        {/* Glassmorphism form container */}
         <form className="w-full max-w-3xl space-y-6 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
           <select className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400">
             <option>Source Type</option>

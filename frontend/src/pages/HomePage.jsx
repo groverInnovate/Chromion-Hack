@@ -7,12 +7,9 @@ const HomePage = () => {
         <div className="relative min-h-screen flex flex-col md:flex-row items-center justify-between px-6 md:px-16 pt-50% pb-12 bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden">
             <Navbar />
 
-            {/* Background gradient */}
-
             <div className="absolute top-0 left-0 w-80 h-80 bg-purple-700 opacity-10 blur-[120px] rounded-full z-10"></div>
             <div className="absolute bottom-16 right-8 w-96 h-96 bg-[#bb6ea8] opacity-30 blur-[160px] rounded-full z-10"></div>
 
-            {/* Left bottom glowing sphere */}
             <div className="absolute bottom-0 left-0 transform translate-x-[-20%] translate-y-[40%] z-[1]">
                 <div className="relative">
                     {/* Main sphere */}
@@ -63,9 +60,7 @@ const HomePage = () => {
                 </div>
             </div>
 
-            {/* Text */}
             <div className="flex-1 px-6 z-10 relative">
-                {/* Small glowing sphere behind "Own" */}
                 <div className="absolute top-[120px] md:top-[1px] left-[280px] md:left-[650px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
                     <div className="relative">
                         {/* Main small sphere */}
@@ -117,7 +112,6 @@ const HomePage = () => {
                 </button>
             </div>
 
-            {/* Robot */}
             <div className="relative flex justify-end w-full md:w-[55%] h-[600px] md:h-[700px] z-10 overflow-visible">
                 <div className="scale-[1.2] translate-x-6 md:translate-x-44 md:translate-y-12 w-[100%] h-full">
                     <Spline scene="https://prod.spline.design/bBZhaOPognQ5-DAn/scene.splinecode" />
