@@ -1,15 +1,32 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useHelpBox } from "./HelpBox.jsx";
 
 const Navbar = () => {
+
+  const [currentPath, setCurrentPath] = useState("");
+  const { openHelp } = useHelpBox();
+
+  useEffect(() => {
+    setCurrentPath(window.location.pathname);
+  }, []);
+
+  const linkClasses = (path) =>
+    `hover:text-purple-300 transition ${currentPath === path ? "underline underline-offset-4 text-purple-300" : ""
+    }`;
+
   return (
     <div className="flex justify-between items-center px-6 md:px-16 py-4 absolute top-0 left-0 w-full z-20">
       <div className="text-white text-xl font-semibold tracking-widest">LOGO</div>
 
       <div className="hidden md:flex gap-8 text-white text-sm md:text-base">
-        <a href="/profile" className="hover:text-purple-300 text-[20px] transition">Profile</a>
-        <a href="/create-agent" className="hover:text-purple-300 text-[20px] transition">Create Agent</a>
-        <a href="/trade-history" className="hover:text-purple-300 text-[20px] transition">Trade History</a>
-        <a href="#" className="hover:text-purple-300 text-[20px] transition">Help</a>
+        <a href="/profile" className={linkClasses("/profile")} >Profile</a>
+        <a href="/create-agent" className={linkClasses("/create-agent")}>Create Agent</a>
+        <a href="/trade-history" className={linkClasses("/trade-history")}>Trade History</a>
+        <button
+          onClick={openHelp}
+          className="hover:text-purple-300 transition focus:outline-none">
+          Help
+        </button>
       </div>
 
       <div className="flex items-center gap-4">
