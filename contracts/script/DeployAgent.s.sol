@@ -7,12 +7,19 @@ import {Agent} from "../src/Agent.sol";
 import {Platform} from "../src/PlatformType.sol";
 
 contract DeployAgent is Script {
+
+    /*//////////////////////////////////////////////////////////////
+                           STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     address owner = makeAddr("owner");
     uint256 constant INITIAL_BALANCE = 10 ether;
 
+    /*//////////////////////////////////////////////////////////////
+                                FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function run(address authorizedSigner) external returns (AgentFactory, Agent) {
-        vm.startBroadcast(owner);
         vm.deal(owner, INITIAL_BALANCE);
+        vm.startBroadcast(owner);
         AgentFactory factory = new AgentFactory();
         address[] memory tokenArray = new address[](3);
         tokenArray[0] = makeAddr("token0");
@@ -23,7 +30,7 @@ contract DeployAgent is Script {
             Platform.Twitter,
             authorizedSigner
         );
-        vm.stopBroadcast();
+        vm.stopBroadcast(); 
         return (factory, agent);
     }
 }

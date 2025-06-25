@@ -4,21 +4,17 @@ pragma solidity 0.8.20;
 import {Agent} from "./Agent.sol";
 import {Platform} from "./PlatformType.sol";
 
-/// @title AgentFactory Contract
-/// @notice Factory contract for creating and managing trading agents
-/// @dev Creates new Agent instances and maintains a registry of all created agents
-
 contract AgentFactory {
+    /*//////////////////////////////////////////////////////////////
+                                ERRORS
+    //////////////////////////////////////////////////////////////*/
     error Factory__NoTokenPresent();
     error Factory__PlatformNotAvailable();
     error Factory__AmountIsZero();
 
-    /// @notice Structure to store information about created agents
-    /// @param agentAddress The address of the created agent contract
-    /// @param owner The address of the agent owner
-    /// @param tokens Array of token addresses supported by the agent
-    /// @param amountInvested Initial investment amount in wei
-    /// @param platformType The platform type associated with the agent
+    /*//////////////////////////////////////////////////////////////
+                             TYPE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     struct AgentInfo {
         address agentAddress;
         address owner;
@@ -27,22 +23,27 @@ contract AgentFactory {
         Platform platformType;
     }
 
-    /// @notice Mapping of user addresses to their created agents
-    mapping(address => AgentInfo[]) public userToAgents;
+    /*//////////////////////////////////////////////////////////////
+                                MAPPING
+    //////////////////////////////////////////////////////////////*/
+    mapping(address user => AgentInfo[]) public userToAgents;
 
-    /// @notice Event emitted when a new agent is created
-    /// @param agentAddress The address of the newly created agent
-    /// @param platform The platform type associated with the agent
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
     event Factory__AgentCreated(
         address indexed agentAddress,
-        Platform indexed platform
+        Platform indexed platform,
+        address[] indexed tokens
     );
 
-    /// @notice Creates a new trading agent
-    /// @param _tokens Array of token addresses that the agent will support
-    /// @param _platformType The platform type for the agent (Twitter, Telegram, or Discord)
-    /// @param authorizedSigner Address that will be authorized to execute trades
-    /// @dev Requires a non-zero ETH value to be sent with the transaction
+    /*//////////////////////////////////////////////////////////////
+                                FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+
+    /*//////////////////////////////////////////////////////////////
+                           EXTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function createAgent(
         address[] memory _tokens,
         Platform _platformType,
@@ -74,40 +75,34 @@ contract AgentFactory {
         });
 
         userToAgents[msg.sender].push(info);
-        emit Factory__AgentCreated(msg.sender, _platformType);
+        emit Factory__AgentCreated(address(agent), _platformType, _tokens);
         return agent;
     }
 
-    function getAgentInfo(
-        address user,
-        uint256 index
-    )
-        external
-        view
-        returns (
-            address agentAddress,
-            address owner,
-            address[] memory tokens,
-            uint256 amountInvested,
-            Platform platformType
-        )
-    {
-        AgentInfo storage info = userToAgents[user][index];
-        return (
-            info.agentAddress,
-            info.owner,
-            info.tokens,
-            info.amountInvested,
-            info.platformType
-        );
-    }
-
-    /// @notice Internal function to validate platform type
-    /// @param platform The platform type to validate
-    /// @return bool True if the platform is valid, false otherwise
+    /*//////////////////////////////////////////////////////////////
+                           INTERNAL FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function isValidPlatform(Platform platform) internal pure returns (bool) {
         return (platform == Platform.Telegram ||
             platform == Platform.Twitter ||
             platform == Platform.Discord);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           GETTER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
+    function getAgentInfo(
+        address user,
+        uint256 index
+    ) external view returns (AgentInfo memory) {
+        AgentInfo storage info = userToAgents[user][index];
+        return
+            AgentInfo(
+                info.agentAddress,
+                info.owner,
+                info.tokens,
+                info.amountInvested,
+                info.platformType
+            );
     }
 }

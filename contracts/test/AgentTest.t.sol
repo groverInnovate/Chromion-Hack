@@ -8,30 +8,35 @@ import {DeployAgent} from "../script/DeployAgent.s.sol";
 import {Platform} from "../src/PlatformType.sol";
 
 contract AgentTest is Test {
-    AgentFactory public factory;
-    Agent public agent;
-    DeployAgent public deployer;
-    address public authorizedSigner = makeAddr("authorizedSigner");
-    address public owner = makeAddr("owner");
-    uint256 public constant INITIAL_BALANCE = 10 ether;
+    /*//////////////////////////////////////////////////////////////
+                           STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
+    AgentFactory factory;
+    Agent agent;
+    DeployAgent deployer;
+    address authorizedSigner;
+    address owner = makeAddr("owner");
+    uint256 constant INITIAL_BALANCE = 10 ether;
     uint256 private signerPrivateKey;
-
     Agent.TradeData testTradeData;
-    bytes32 constant DOMAIN_SEPARATOR_TYPEHASH =
+    bytes32 private constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
-            "EIP712Domain(string name, string version, uint256 chainId, address verifyingContract)"
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
         );
-    bytes32 constant TRADE_DATA_TYPEHASH =
+    bytes32 private constant TYPE_HASH =
         keccak256(
-            "TradeData(address tokenIn, address tokenOut, uint256 amountIn, uint256 minAmountOut, uint256 maxAmountOut, uint256 deadline, uint256 nonce)"
+            "TradeData(address tokenIn,address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 maxAmountOut,uint256 deadline,uint256 nonce)"
         );
 
+    /*//////////////////////////////////////////////////////////////
+                                FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function setUp() external {
         signerPrivateKey = 0xA11CE;
         authorizedSigner = vm.addr(signerPrivateKey);
+        vm.deal(owner, INITIAL_BALANCE);
 
         deployer = new DeployAgent();
-        vm.deal(owner, INITIAL_BALANCE);
         (factory, agent) = deployer.run(authorizedSigner);
 
         testTradeData = Agent.TradeData({
@@ -45,22 +50,22 @@ contract AgentTest is Test {
         });
     }
 
+    /*//////////////////////////////////////////////////////////////
+                         AGENT FACTORY FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function testCreatedAgent() external {
-        (
-            address agentAddress,
-            address _owner,
-            address[] memory __tokens,
-            uint256 amount,
-            Platform platform
-        ) = factory.getAgentInfo(owner, 0);
-        assertEq(agentAddress, address(agent));
-        assertEq(_owner, owner);
-        assertEq(__tokens.length, 3);
-        assertEq(__tokens[0], makeAddr("token0"));
-        assertEq(__tokens[1], makeAddr("token1"));
-        assertEq(__tokens[2], makeAddr("token2"));
-        assertEq(amount, 1 ether);
-        assertEq(uint256(platform), uint256(Platform.Twitter));
+        AgentFactory.AgentInfo memory agentInfo = factory.getAgentInfo(
+            owner,
+            0
+        );
+        assertEq(agentInfo.agentAddress, address(agent));
+        assertEq(agentInfo.owner, owner);
+        assertEq(agentInfo.tokens.length, 3);
+        assertEq(agentInfo.tokens[0], makeAddr("token0"));
+        assertEq(agentInfo.tokens[1], makeAddr("token1"));
+        assertEq(agentInfo.tokens[2], makeAddr("token2"));
+        assertEq(agentInfo.amountInvested, 1 ether);
+        assertEq(uint256(agentInfo.platformType), uint256(Platform.Twitter));
     }
 
     function testCreateMultipleAgentsWithDifferentPlatformsAndTokens()
@@ -82,43 +87,34 @@ contract AgentTest is Test {
             Platform.Telegram,
             authorizedSigner
         );
-        (
-            address agentAddressNew,
-            address _ownerNew,
-            address[] memory __tokensNew,
-            uint256 amountNew,
-            Platform platformNew
-        ) = factory.getAgentInfo(owner, 1);
-        (
-            address agentAddressNewAgain,
-            address _ownerNewAgain,
-            address[] memory __tokensNewAgain,
-            uint256 amountNewAgain,
-            Platform platformNewAgain
-        ) = factory.getAgentInfo(owner, 2);
+        AgentFactory.AgentInfo memory agentNew = factory.getAgentInfo(owner, 1);
+        AgentFactory.AgentInfo memory agentNewAgain = factory.getAgentInfo(owner, 2);
         vm.stopPrank();
-        assertEq(agentAddressNew, address(newAgent));
-        assertEq(_ownerNew, owner);
-        assertEq(__tokensNew.length, 2);
-        assertEq(__tokensNew[0], makeAddr("newToken0"));
-        assertEq(__tokensNew[1], makeAddr("newToken1"));
-        assertEq(amountNew, 2 ether);
-        assertEq(uint256(platformNew), uint256(Platform.Discord));
-        assertEq(agentAddressNewAgain, address(newAgentAgain));
-        assertEq(_ownerNewAgain, owner);
-        assertEq(__tokensNewAgain.length, 1);
-        assertEq(__tokensNewAgain[0], makeAddr("newToken"));
-        assertEq(amountNewAgain, 3 ether);
-        assertEq(uint256(platformNewAgain), uint256(Platform.Telegram));
+        assertEq(agentNew.agentAddress, address(newAgent));
+        assertEq(agentNew.owner, owner);
+        assertEq(agentNew.tokens.length, 2);
+        assertEq(agentNew.tokens[0], makeAddr("newToken0"));
+        assertEq(agentNew.tokens[1], makeAddr("newToken1"));
+        assertEq(agentNew.amountInvested, 2 ether);
+        assertEq(uint256(agentNew.platformType), uint256(Platform.Discord));
+        assertEq(agentNewAgain.agentAddress, address(newAgentAgain));
+        assertEq(agentNewAgain.owner, owner);
+        assertEq(agentNewAgain.tokens.length, 1);
+        assertEq(agentNewAgain.tokens[0], makeAddr("newToken"));
+        assertEq(agentNewAgain.amountInvested, 3 ether);
+        assertEq(uint256(agentNewAgain.platformType), uint256(Platform.Telegram));
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            AGENT FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function testPauseAndResumeAgent() external {
         vm.startPrank(owner);
         agent.pauseAgent();
-        assertEq(agent.isPaused(), true);
+        assertEq(agent.getPausedState(), true);
 
         agent.resumeAgent();
-        assertEq(agent.isPaused(), false);
+        assertEq(agent.getPausedState(), false);
         vm.stopPrank();
     }
 
@@ -138,18 +134,10 @@ contract AgentTest is Test {
         vm.stopPrank();
     }
 
-    function testCannotWithdrawFundsWhileRunning() external {
-        vm.startPrank(owner);
-        vm.expectRevert();
-        agent.withdrawFunds();
-        vm.stopPrank();
-    }
-
     function testWithdrawFunds() external {
         uint256 userInitialBalance = owner.balance;
         uint256 agentInitialBalance = address(agent).balance;
         vm.startPrank(owner);
-        agent.pauseAgent();
         agent.withdrawFunds();
         vm.stopPrank();
         uint256 userFinalBalance = owner.balance;
@@ -160,10 +148,22 @@ contract AgentTest is Test {
         );
     }
 
+    function testAddFunds() external {
+        uint256 userInitialBalance = owner.balance;
+        uint256 agentInitialBalance = address(agent).balance;
+        vm.startPrank(owner);
+        agent.addFunds{value: 2 ether}();
+        vm.stopPrank();
+        uint256 userFinalBalance = owner.balance;
+        uint256 agentFinalBalance = address(agent).balance;
+        assertEq(userInitialBalance - userFinalBalance, 2 ether);
+        assertEq(agentFinalBalance - agentInitialBalance, 2 ether);
+    }
+
     function testDomainSeparator() external view {
         bytes32 expectedDomainSeparator = keccak256(
             abi.encode(
-                DOMAIN_SEPARATOR_TYPEHASH,
+                EIP712_DOMAIN_TYPEHASH,
                 keccak256(bytes("Agent")),
                 keccak256(bytes("1")),
                 block.chainid,
@@ -173,25 +173,25 @@ contract AgentTest is Test {
         assertEq(agent.getDomainSeparator(), expectedDomainSeparator);
     }
 
-    // function testExecuteSwapWithValidSignature() external {
-    //     address token1 = makeAddr("token1");
-    //     address token2 = makeAddr("token2");
-    //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenIn: token1,
-    //         tokenOut: token2,
-    //         amountIn: 1,
-    //         minAmountOut: 1,
-    //         maxAmountOut: 2,
-    //         deadline: block.timestamp + 1 hours,
-    //         nonce: 1001
-    //     });
+    function testExecuteSwapWithValidSignature() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1001
+        });
 
-    //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
-    //     vm.startPrank(authorizedSigner);
-    //     agent.executeSwap(trade, sig);
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(authorizedSigner);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
 
     function testExecuteSwapWithInvalidSignature() external {
         address token1 = makeAddr("token1");
@@ -257,27 +257,27 @@ contract AgentTest is Test {
         vm.stopPrank();
     }
 
-    // function testExecuteSwapWithUsedNonce() external {
-    //     address token1 = makeAddr("token1");
-    //     address token2 = makeAddr("token2");
-    //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenIn: token1,
-    //         tokenOut: token2,
-    //         amountIn: 1,
-    //         minAmountOut: 1,
-    //         maxAmountOut: 2,
-    //         deadline: block.timestamp + 1 hours,
-    //         nonce: 1005
-    //     });
+    function testExecuteSwapWithUsedNonce() external {
+        address token1 = makeAddr("token1");
+        address token2 = makeAddr("token2");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenIn: token1,
+            tokenOut: token2,
+            amountIn: 1,
+            minAmountOut: 1,
+            maxAmountOut: 2,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1005
+        });
 
-    //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
-    //     vm.startPrank(authorizedSigner);
-    //     agent.executeSwap(trade, sig);
-    //     vm.expectRevert(Agent.Agent__NonceAlreadyUsed.selector);
-    //     agent.executeSwap(trade, sig);
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(authorizedSigner);
+        agent.executeSwap(trade, sig);
+        vm.expectRevert(Agent.Agent__NonceAlreadyUsed.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
 
     function testSignTradeDataProducesCorrectDigest() external {
         address token1 = makeAddr("token1");
@@ -287,14 +287,14 @@ contract AgentTest is Test {
             tokenOut: token2,
             amountIn: 1,
             minAmountOut: 1,
-            maxAmountOut: 2, 
+            maxAmountOut: 2,
             deadline: block.timestamp + 1 hours,
             nonce: 12345
         });
 
         bytes32 structHash = keccak256(
             abi.encode(
-                TRADE_DATA_TYPEHASH,
+                TYPE_HASH,
                 trade.tokenIn,
                 trade.tokenOut,
                 trade.amountIn,
@@ -321,7 +321,7 @@ contract AgentTest is Test {
     ) internal view returns (bytes memory) {
         bytes32 structHash = keccak256(
             abi.encode(
-                TRADE_DATA_TYPEHASH,
+                TYPE_HASH,
                 data.tokenIn,
                 data.tokenOut,
                 data.amountIn,

@@ -6,3 +6,4 @@ enum Platform {
     Telegram,
     Discord
 }
+ 
