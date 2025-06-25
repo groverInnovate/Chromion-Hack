@@ -8,6 +8,8 @@ import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/Ree
 import {ECDSA} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Platform} from "./PlatformType.sol";
 
+/// @title Agent
+/// @notice Represents an individual trading agent that can execute trades based on authorized signatures
 contract Agent is ReentrancyGuard {
     using ECDSA for bytes32;
 
@@ -29,6 +31,14 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                               TYPE VARIABLES
     //////////////////////////////////////////////////////////////*/
+    /// @notice Structure to hold trade data for execution
+    /// @param tokenIn Address of the input token
+    /// @param tokenOut Address of the output token
+    /// @param amountIn Amount of input token to trade
+    /// @param minAmountOut Minimum amount of output token expected
+    /// @param maxAmountOut Maximum amount of output token expected
+    /// @param deadline Timestamp after which the trade becomes invalid
+    /// @param nonce Unique identifier to prevent replay attacks
     struct TradeData {
         address tokenIn;
         address tokenOut;
@@ -72,8 +82,16 @@ contract Agent is ReentrancyGuard {
     //////////////////////////////////////////////////////////////*/
     event Agent__AgentPaused();
     event Agent__AgentResumed();
+    /// @param user The address of the user withdrawing funds
+    /// @param amountWithdrawn The amount withdrawn
     event Agent__FundsWithdrawan(address indexed user, uint256 amountWithdrawn);
+    /// @param user The address of the user adding funds
+    /// @param amountAdded The amount added
     event Agent__FundsAdded(address indexed user, uint256 amountAdded);
+    /// @param user The address executing the trade
+    /// @param tokenIn The input token address
+    /// @param tokenOut The output token address
+    /// @param amountIn The input amount
     event Agent__TradeExecuted(
         address indexed user,
         address indexed tokenIn,
@@ -84,6 +102,7 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Restricts function to only the owner
     modifier onlyOwner() {
         if (msg.sender != owner) {
             revert Agent__NotOwner();
@@ -91,6 +110,7 @@ contract Agent is ReentrancyGuard {
         _;
     }
 
+    /// @notice Restricts function to only when agent is paused
     modifier paused() {
         if (!isPaused) {
             revert Agent__AgentIsRunning();
@@ -98,6 +118,7 @@ contract Agent is ReentrancyGuard {
         _;
     }
 
+    /// @notice Restricts function to only the authorized signer
     modifier onlyAuthorized() {
         if (msg.sender != authorizedSigner) {
             revert Agent__NotAuthorized();
@@ -108,6 +129,11 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                                FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Initializes the agent contract
+    /// @param _tokens Array of supported token addresses
+    /// @param _platformType The platform type (Twitter, Telegram, Discord)
+    /// @param _authorizedSigner The address authorized to execute trades
+    /// @param _owner The owner of the agent
     constructor(
         address[] memory _tokens,
         Platform _platformType,
@@ -137,6 +163,7 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Pauses the agent
     function pauseAgent() public onlyOwner {
         if (isPaused) {
             revert Agent__AgentIsPaused();
@@ -145,6 +172,7 @@ contract Agent is ReentrancyGuard {
         emit Agent__AgentPaused();
     }
 
+    /// @notice Resumes the agent
     function resumeAgent() public onlyOwner {
         if (!isPaused) {
             revert Agent__AgentIsRunning();
@@ -156,12 +184,14 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Withdraws all funds from the agent to the owner
     function withdrawFunds() external nonReentrant onlyOwner {
         pauseAgent();
         _withdrawFunds();
         resumeAgent();
     }
 
+    /// @notice Allows user to add funds to the agent
     function addFunds() external payable nonReentrant onlyOwner {
         if (msg.value == 0) {
             revert Agent__AmountIsZero();
@@ -171,6 +201,9 @@ contract Agent is ReentrancyGuard {
         resumeAgent();
     }
 
+    /// @notice Executes a trade if the signature and parameters are valid
+    /// @param data The trade data
+    /// @param signature The EIP-712 signature
     function executeSwap(
         TradeData memory data,
         bytes calldata signature
@@ -213,6 +246,7 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                            INTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Internal function to withdraw all user funds to the owner
     function _withdrawFunds() internal {
         uint256 balance = userFunds;
         (bool success, ) = payable(owner).call{value: balance}("");
@@ -223,11 +257,16 @@ contract Agent is ReentrancyGuard {
         emit Agent__FundsWithdrawan(msg.sender, balance);
     }
 
+    /// @notice Internal function to add funds to the user's balance
+    /// @param amount The amount to add to userFunds
     function _addFunds(uint256 amount) internal {
         userFunds = userFunds + amount;
         emit Agent__FundsAdded(msg.sender, amount);
     }
 
+    /// @notice Hashes the TradeData struct according to EIP-712
+    /// @param data The TradeData struct to hash
+    /// @return The keccak256 hash of the encoded TradeData
     function hashTradeData(
         TradeData memory data
     ) internal pure returns (bytes32) {
@@ -246,6 +285,10 @@ contract Agent is ReentrancyGuard {
             );
     }
 
+    /// @notice Verifies the EIP-712 signature for the given TradeData
+    /// @param data The TradeData struct to verify
+    /// @param signature The signature to verify
+    /// @return True if the signature is valid and signed by the authorized signer, false otherwise
     function verifySignature(
         TradeData memory data,
         bytes calldata signature
@@ -255,38 +298,51 @@ contract Agent is ReentrancyGuard {
         return signer == authorizedSigner;
     }
 
+    /// @notice Calculates the EIP-712 digest for the given TradeData
+    /// @param data The TradeData struct to hash
+    /// @return The EIP-712 digest as bytes32
     function calculateDigest(
         TradeData memory data
     ) internal view returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hashTradeData(data))
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    hashTradeData(data)
+                )
             );
     }
 
     /*//////////////////////////////////////////////////////////////
                            GETTER FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+    /// @notice Returns the authorized signer address
     function getAuthorizedSigner() external view returns (address) {
         return authorizedSigner;
     }
 
+    /// @notice Returns the owner address
     function getOwner() external view returns (address) {
         return owner;
     }
 
+    /// @notice Returns the user funds
     function getUserFunds() external view returns (uint256) {
         return userFunds;
     }
 
+    /// @notice Returns whether a nonce has been used
     function isNonceUsed(uint256 nonce) external view returns (bool) {
         return noncesUsed[nonce];
     }
 
+    /// @notice Returns the paused state
     function getPausedState() external view returns (bool) {
         return isPaused;
     }
 
+    /// @notice Returns the EIP-712 domain separator
     function getDomainSeparator() external view returns (bytes32) {
         return DOMAIN_SEPARATOR;
     }
