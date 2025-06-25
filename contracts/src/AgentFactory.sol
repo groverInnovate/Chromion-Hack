@@ -65,7 +65,7 @@ contract AgentFactory {
     function createAgent(
         address[] memory _tokens,
         Platform _platformType,
-        address authorizedSigner // address of the psuedo wallet created for the backend which will execute the swap function
+        address authorizedSigner
     ) external payable returns (Agent) {
         if (_tokens.length == 0) {
             revert Factory__NoTokenPresent();

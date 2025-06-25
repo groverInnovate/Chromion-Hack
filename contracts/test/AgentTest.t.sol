@@ -88,7 +88,10 @@ contract AgentTest is Test {
             authorizedSigner
         );
         AgentFactory.AgentInfo memory agentNew = factory.getAgentInfo(owner, 1);
-        AgentFactory.AgentInfo memory agentNewAgain = factory.getAgentInfo(owner, 2);
+        AgentFactory.AgentInfo memory agentNewAgain = factory.getAgentInfo(
+            owner,
+            2
+        );
         vm.stopPrank();
         assertEq(agentNew.agentAddress, address(newAgent));
         assertEq(agentNew.owner, owner);
@@ -102,7 +105,10 @@ contract AgentTest is Test {
         assertEq(agentNewAgain.tokens.length, 1);
         assertEq(agentNewAgain.tokens[0], makeAddr("newToken"));
         assertEq(agentNewAgain.amountInvested, 3 ether);
-        assertEq(uint256(agentNewAgain.platformType), uint256(Platform.Telegram));
+        assertEq(
+            uint256(agentNewAgain.platformType),
+            uint256(Platform.Telegram)
+        );
     }
 
     /*//////////////////////////////////////////////////////////////

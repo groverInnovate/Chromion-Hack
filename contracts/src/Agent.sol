@@ -7,6 +7,8 @@ pragma solidity 0.8.20;
 import {ReentrancyGuard} from "../lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {ECDSA} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import {Platform} from "./PlatformType.sol";
+import {ISwapRouter} from "../lib/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 /// @title Agent
 /// @notice Represents an individual trading agent that can execute trades based on authorized signatures

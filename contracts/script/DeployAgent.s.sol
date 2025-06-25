@@ -7,7 +7,6 @@ import {Agent} from "../src/Agent.sol";
 import {Platform} from "../src/PlatformType.sol";
 
 contract DeployAgent is Script {
-
     /*//////////////////////////////////////////////////////////////
                            STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -17,7 +16,9 @@ contract DeployAgent is Script {
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function run(address authorizedSigner) external returns (AgentFactory, Agent) {
+    function run(
+        address authorizedSigner
+    ) external returns (AgentFactory, Agent) {
         vm.deal(owner, INITIAL_BALANCE);
         vm.startBroadcast(owner);
         AgentFactory factory = new AgentFactory();
@@ -30,7 +31,7 @@ contract DeployAgent is Script {
             Platform.Twitter,
             authorizedSigner
         );
-        vm.stopBroadcast(); 
+        vm.stopBroadcast();
         return (factory, agent);
     }
 }
