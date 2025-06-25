@@ -166,7 +166,7 @@ const TradeHistoryPage = () => {
                     </div>
                 </div>
 
-                <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] text-transparent bg-clip-text">
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 py-1 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] text-transparent bg-clip-text opacity-0 animate-slideInTop delay-[400ms]">
                     Trade History Table
                 </h1>
 
