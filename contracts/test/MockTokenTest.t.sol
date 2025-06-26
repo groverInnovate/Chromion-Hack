@@ -8,6 +8,9 @@ import {MockUSDT} from "../src/mocks/MockUSDT.sol";
 import {DeployMocks} from "../script/DeployMocks.s.sol";
 
 contract MockTokenTest is Test {
+    /*//////////////////////////////////////////////////////////////
+                            STATE VARIABLES
+    //////////////////////////////////////////////////////////////*/
     MockUSDT usdt;
     MockDAI dai;
     MockWETH weth;
@@ -16,9 +19,13 @@ contract MockTokenTest is Test {
     address recipient = makeAddr("recipient");
 
     function setUp() external {
+        deployer = new DeployMocks();
         (dai, weth, usdt) = deployer.run();
     }
 
+    /*//////////////////////////////////////////////////////////////
+                            MOCKDAI TESTS
+    //////////////////////////////////////////////////////////////*/
     function testDAIMintTransferAndBurn() external {
         uint256 mintAmount = 1000 ether;
         dai.mint(user, mintAmount);
@@ -39,6 +46,15 @@ contract MockTokenTest is Test {
         assertEq(dai.totalSupply(), 800 ether);
     }
 
+    function testDAITokenMetadata() external view {
+        assertEq(dai.name(), "DAI");
+        assertEq(dai.symbol(), "DAI");
+        assertEq(dai.decimals(), 18);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            MOCKWETH TESTS
+    //////////////////////////////////////////////////////////////*/
     function testWETHMintTransferAndBurn() external {
         uint256 mintAmount = 5 ether;
         weth.mint(user, mintAmount);
@@ -59,6 +75,15 @@ contract MockTokenTest is Test {
         assertEq(weth.totalSupply(), 4 ether);
     }
 
+    function testWETHTokenMetadata() external view {
+        assertEq(weth.name(), "Wrapped ETH");
+        assertEq(weth.symbol(), "WETH");
+        assertEq(weth.decimals(), 18);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            MOCKUSDT TESTS
+    //////////////////////////////////////////////////////////////*/
     function testUSDTMintTransferAndBurn() external {
         uint256 mintAmount = 5 ether;
         usdt.mint(user, mintAmount);
@@ -77,18 +102,6 @@ contract MockTokenTest is Test {
 
         assertEq(usdt.balanceOf(user), 2 ether);
         assertEq(usdt.totalSupply(), 4 ether);
-    }
-
-    function testDAITokenMetadata() external view {
-        assertEq(dai.name(), "DAI");
-        assertEq(dai.symbol(), "DAI");
-        assertEq(dai.decimals(), 18);
-    }
-
-    function testWETHTokenMetadata() external view {
-        assertEq(weth.name(), "Wrapped ETH");
-        assertEq(weth.symbol(), "WETH");
-        assertEq(weth.decimals(), 18);
     }
 
     function testUSDTTokenMetadata() external view {

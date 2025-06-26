@@ -9,6 +9,7 @@ import {ECDSA} from "../lib/openzeppelin-contracts/contracts/utils/cryptography/
 import {Platform} from "./PlatformType.sol";
 import {ISwapRouter} from "../lib/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {TransferHelper} from "../lib/v3-periphery/contracts/libraries/TransferHelper.sol";
 
 /// @title Agent
 /// @notice Represents an individual trading agent that can execute trades based on authorized signatures
@@ -36,6 +37,7 @@ contract Agent is ReentrancyGuard {
     /// @notice Structure to hold trade data for execution
     /// @param tokenIn Address of the input token
     /// @param tokenOut Address of the output token
+    /// @param fee The fee for the swap
     /// @param amountIn Amount of input token to trade
     /// @param minAmountOut Minimum amount of output token expected
     /// @param maxAmountOut Maximum amount of output token expected
@@ -44,6 +46,7 @@ contract Agent is ReentrancyGuard {
     struct TradeData {
         address tokenIn;
         address tokenOut;
+        uint24 fee;
         uint256 amountIn;
         uint256 minAmountOut; // based on high price
         uint256 maxAmountOut; // based on low price
@@ -60,6 +63,7 @@ contract Agent is ReentrancyGuard {
     /*//////////////////////////////////////////////////////////////
                               STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
+    ISwapRouter private immutable i_swapRouter;
     Platform private platformType;
     address private owner; // address of the user
     bool private isPaused;
@@ -76,7 +80,7 @@ contract Agent is ReentrancyGuard {
     bytes32 private immutable DOMAIN_SEPARATOR;
     bytes32 private constant TYPE_HASH =
         keccak256(
-            "TradeData(address tokenIn,address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 maxAmountOut,uint256 deadline,uint256 nonce)"
+            "TradeData(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint256 minAmountOut,uint256 maxAmountOut,uint256 deadline,uint256 nonce)"
         );
 
     /*//////////////////////////////////////////////////////////////
@@ -100,6 +104,7 @@ contract Agent is ReentrancyGuard {
         address indexed tokenOut,
         uint256 amountIn
     );
+    event Agent__TradeAmount(uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                                 MODIFIERS
@@ -160,6 +165,7 @@ contract Agent is ReentrancyGuard {
                 verifyingContract
             )
         );
+        i_swapRouter = ISwapRouter(0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -233,7 +239,25 @@ contract Agent is ReentrancyGuard {
             revert Agent__IncorrectSignature();
         }
 
-        // swapping logic due
+        TransferHelper.safeApprove(
+            data.tokenIn,
+            address(i_swapRouter),
+            data.amountIn
+        );
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+            .ExactInputSingleParams({
+                tokenIn: data.tokenIn,
+                tokenOut: data.tokenOut,
+                fee: data.fee,
+                recipient: address(this),
+                deadline: data.deadline,
+                amountIn: data.amountIn,
+                amountOutMinimum: data.minAmountOut,
+                sqrtPriceLimitX96: 0
+            });
+
+        uint256 amountOut = i_swapRouter.exactInputSingle(params);
+        emit Agent__TradeAmount(amountOut);
 
         noncesUsed[data.nonce] = true;
 
@@ -278,6 +302,7 @@ contract Agent is ReentrancyGuard {
                     TYPE_HASH,
                     data.tokenIn,
                     data.tokenOut,
+                    data.fee,
                     data.amountIn,
                     data.minAmountOut,
                     data.maxAmountOut,
