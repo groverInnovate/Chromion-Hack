@@ -128,16 +128,16 @@ const ProfilePage = () => {
 
                     <div className="flex-1 space-y-6 text-white/90 text-[20px] text-sm">
                         <div>
-                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Bio</h3>
-                            <p className="leading-relaxed ">
+                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Bio</h3>
+                            <p className="leading-relaxed transition opacity-0 animate-slideInBottom delay-[400ms]">
                                 This is your AI trader profile. Customize it to personalize your
                                 trading agent and public identity. Others may view this on public leaderboards.
                             </p>
                         </div>
 
                         <div>
-                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Preferences</h3>
-                            <ul className="list-disc list-inside leading-relaxed">
+                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Preferences</h3>
+                            <ul className="list-disc list-inside leading-relaxed transition opacity-0 animate-slideInBottom delay-[400ms]">
                                 <li>Execution Mode: Manual</li>
                                 <li>Preferred Networks: Ethereum, Arbitrum</li>
                                 <li>Favourite Pairs: ETH/USDC, BTC/ETH</li>
@@ -145,7 +145,7 @@ const ProfilePage = () => {
                         </div>
 
                         <div>
-                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4">Your Agents</h3>
+                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Your Agents</h3>
                             <p className="text-white/70 italic">No agents created yet.</p>
                         </div>
                     </div>

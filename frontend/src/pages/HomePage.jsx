@@ -101,10 +101,10 @@ const HomePage = () => {
                         />
                     </div>
                 </div>
-                <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-[#ffffff] via-[#d1bbe8] to-[#7940b5] text-transparent bg-clip-text opacity-0 animate-slideInRight delay-[400ms]">
+                <h1 className="text-6xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-[#ffffff] via-[#d1bbe8] to-[#7940b5] text-transparent bg-clip-text opacity-0 animate-slideInRight delay-[10ms]">
                     Create Your Own
                 </h1>
-                <h1 className="text-6xl md:text-7xl font-bold mb-6 py-2 bg-gradient-to-r from-[#ffffff] via-[#d1bbe8] to-[#7940b5] text-transparent bg-clip-text opacity-0 animate-slideInRight delay-[400ms]">
+                <h1 className="text-6xl md:text-7xl font-bold mb-6 py-2 bg-gradient-to-r from-[#ffffff] via-[#d1bbe8] to-[#7940b5] text-transparent bg-clip-text opacity-0 animate-slideInRight delay-[10ms]">
                     AI Trading Agent
                 </h1>
                 <p className="text-lg md:text-xl text-gray-300 mb-12 max-w-xl opacity-0 animate-slideInLeft delay-[1200ms]">

@@ -6,12 +6,10 @@ const TradeHistoryPage = () => {
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Replace this with actual fetch from API, backend or contract
     // useEffect(() => {
     //     async function fetchTradeData() {
     //         try {
-    //             // Placeholder for real API or contract call
-    //             const response = await fetch("/api/trade-history"); // Example endpoint
+    //             const response = await fetch("/api/trade-history");
     //             const data = await response.json();
     //             setTrades(data);
     //         } catch (err) {
