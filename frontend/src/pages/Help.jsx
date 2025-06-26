@@ -6,7 +6,7 @@ const HelpBox = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-purple/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
       <div
-        className="bg-[#11143f]/30 border border-white/40 backdrop-blur-xxxl p-12 rounded-xl max-w-lg w-1200 text-white shadow-2xl"
+        className="bg-[#11143f]/30 border border-white/40 backdrop-blur-xxxl p-12 rounded-xl max-w-lg w-1200 text-white shadow-2xl transition opacity-0 animate-slideInBottom delay-[400ms]"
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-[48px] font-semibold">How It Works</h2>

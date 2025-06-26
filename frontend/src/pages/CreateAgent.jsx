@@ -5,7 +5,7 @@ import MultiSelectDropdown from "../components/MultiSelect";
 
 const CreateAgentPage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hiddenrelative">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden relative">
       <Navbar />
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[200px] bg-[#b8aee5] opacity-80 blur-[180px] rounded-full z-0" />
@@ -137,15 +137,15 @@ const CreateAgentPage = () => {
           </div>
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] py-2 text-transparent bg-clip-text opacity-0 animate-slideInTop delay-[400ms]">
+        <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] py-2 text-transparent bg-clip-text opacity-0 animate-slideInLeft delay-[400ms]">
           Create A New Agent
         </h1>
-        <p className="text-md md:text-lg text-white/70 mb-10 text-center opacity-0 animate-slideInBottom delay-[400ms] max-w-2xl">
+        <p className="text-md md:text-lg text-white/70 mb-10 text-center opacity-0 animate-slideInRight delay-[400ms] max-w-2xl">
           Design, describe and deploy your autonomous agent with ease.
         </p>
 
         <form className="w-full max-w-3xl space-y-6 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg">
-          <select className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400">
+          <select className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]">
             <option>Source Type</option>
             <option>Twitter</option>
             <option>Telegram</option>
@@ -155,33 +155,33 @@ const CreateAgentPage = () => {
           <input
             type="text"
             placeholder="Name Your Agent"
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
           />
 
           <textarea
             placeholder="Write a short description"
             rows={4}
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
           />
 
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4 transition opacity-0 animate-slideInBottom delay-[800ms]">
             <MultiSelectDropdown />
           </div>
 
           <input
             type="number"
             placeholder="Enter Maximum Spend Amount"
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
           />
 
 
 
           <label className="flex items-center gap-3 text-white">
             <input type="checkbox" className="accent-purple-500 w-4 h-4" />
-            <span>I confirm the above strategy and approve deployment</span>
+            <span className="transition opacity-0 animate-slideInRight delay-[800ms]">I confirm the above strategy and approve deployment</span>
           </label>
 
-          <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition">
+          <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition opacity-0 animate-slideInBottom delay-[800ms]">
             Deploy Agent
           </button>
         </form>

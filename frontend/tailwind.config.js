@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       animation: {
-        slideInLeft: "slideInLeft 4s ease-out forwards",
-        slideInRight: "slideInRight 4s ease-out forwards",
+        slideInLeft: "slideInLeft 1s ease-out forwards",
+        slideInRight: "slideInRight 2s ease-out forwards",
         slideInTop: "slideInTop 4s ease-out forwards",
         slideInBottom: "slideInBottom 4s ease-out forwards"
       },
       keyframes: {
         slideInLeft: {
-          "0%": { opacity: "0", transform: "translateX(-50px)" },
+          "0%": { opacity: "0", transform: "translateX(-400px)" },
           "100%": { opacity: "1", transform: "translateX(0)" }
         },
         slideInRight: {
-          "0%": { opacity: "0", transform: "translateX(50px)" },
+          "0%": { opacity: "0", transform: "translateX(400px)" },
           "100%": { opacity: "1", transform: "translateX(0)" }
         },
         slideInTop: {
