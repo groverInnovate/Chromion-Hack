@@ -4,15 +4,17 @@ import Navbar from "../components/Navbar";
 
 const HomePage = () => {
     return (
-        <div className="relative min-h-screen flex flex-col md:flex-row items-center justify-between px-6 md:px-16 pt-50% pb-12 bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden">
-            <Navbar />
+        <div className="relative min-h-screen flex flex-col md:flex-row items-center justify-between px-6 md:px-16 pt-50% pb-12 bg-gradient-to-br  from-[#1e0b29] via-[#000408] to-[#310350] overflow-hidden">
 
+            <Navbar />
+            <div className="absolute inset-0 overflow-hidden z-0">
+                
+            </div>
             <div className="absolute top-0 left-0 w-80 h-80 bg-purple-700 opacity-10 blur-[120px] rounded-full z-10"></div>
             <div className="absolute bottom-16 right-8 w-96 h-96 bg-[#bb6ea8] opacity-30 blur-[160px] rounded-full z-10"></div>
 
             <div className="absolute bottom-0 left-0 transform translate-x-[-20%] translate-y-[40%] z-[1]">
                 <div className="relative">
-                    {/* Main sphere */}
                     <div
                         className="w-80 h-80 rounded-full relative"
                         style={{
@@ -21,7 +23,6 @@ const HomePage = () => {
                             animation: 'sphereGlow 4s ease-in-out infinite alternate'
                         }}
                     >
-                        {/* Inner highlight */}
                         <div
                             className="absolute top-8 left-8 w-16 h-16 rounded-full"
                             style={{
@@ -29,8 +30,6 @@ const HomePage = () => {
                                 filter: 'blur(4px)'
                             }}
                         />
-
-                        {/* Surface reflections */}
                         <div
                             className="absolute top-12 left-12 w-8 h-8 rounded-full"
                             style={{
@@ -39,8 +38,6 @@ const HomePage = () => {
                             }}
                         />
                     </div>
-
-                    {/* Outer glow rings */}
                     <div
                         className="absolute inset-0 w-80 h-80 rounded-full animate-pulse"
                         style={{
@@ -48,8 +45,6 @@ const HomePage = () => {
                             animation: 'pulseGlow 3s ease-in-out infinite'
                         }}
                     />
-
-                    {/* Larger outer glow */}
                     <div
                         className="absolute inset-0 w-96 h-96 rounded-full -translate-x-8 -translate-y-8"
                         style={{
@@ -61,9 +56,8 @@ const HomePage = () => {
             </div>
 
             <div className="flex-1 px-6 z-10 relative">
-                <div className="absolute top-[120px] md:top-[1px] left-[280px] md:left-[650px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
+                <div className="absolute top-[120px] md:top-[1px] left-[280px] md:left-[580px] transform translate-x-[-50%] translate-y-[-50%] animate-float z-[-1]">
                     <div className="relative">
-                        {/* Main small sphere */}
                         <div
                             className="w-24 h-24 md:w-32 md:h-32 rounded-full relative"
                             style={{
@@ -72,7 +66,6 @@ const HomePage = () => {
                                 animation: 'sphereGlow 4s ease-in-out infinite alternate'
                             }}
                         >
-                            {/* Inner highlight */}
                             <div
                                 className="absolute top-2 left-2 w-4 h-4 rounded-full"
                                 style={{
@@ -81,8 +74,6 @@ const HomePage = () => {
                                 }}
                             />
                         </div>
-
-                        {/* Outer glow rings */}
                         <div
                             className="absolute inset-0 w-24 h-24 md:w-32 md:h-32 rounded-full"
                             style={{
@@ -90,8 +81,6 @@ const HomePage = () => {
                                 animation: 'pulseGlow 3s ease-in-out infinite'
                             }}
                         />
-
-                        {/* Larger outer glow */}
                         <div
                             className="absolute inset-0 w-32 h-32 md:w-40 md:h-40 rounded-full -translate-x-4 -translate-y-4"
                             style={{

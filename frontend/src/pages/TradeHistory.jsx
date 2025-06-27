@@ -24,7 +24,7 @@ const TradeHistoryPage = () => {
     // }, []);
 
     return (
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden relative">
+        <div className="flex flex-col min-h-screen bg-gradient-to-br  from-[#260d34] via-[#000408] to-[#350754] overflow-hidden relative">
             <Navbar />
 
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[500px] h-[200px] bg-purple-300 opacity-50 blur-[180px] rounded-full z-0" />
@@ -82,7 +82,7 @@ const TradeHistoryPage = () => {
             <main className="flex-grow flex flex-col items-center justify-start pt-36 pb-20 px-6 z-10 relative w-full">
 
                 <div>
-                    <div className="absolute top-[120px] md:top-[20px] left-[280px] md:left-[520px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
+                    <div className="absolute top-[120px] md:top-[20px] left-[280px] md:left-[520px] transform translate-x-[-50%] animate-float translate-y-[-50%] z-[-1]">
                         <div className="relative">
                             {/* Main small sphere */}
                             <div
@@ -122,7 +122,7 @@ const TradeHistoryPage = () => {
                             />
                         </div>
                     </div>
-                    <div className="absolute top-[120px] md:top-[420px] left-[280px] md:left-[1400px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
+                    <div className="absolute top-[120px] md:top-[420px] left-[280px] md:left-[1400px] transform translate-x-[-50%] animate-float translate-y-[-50%] z-[-1]">
                         <div className="relative">
                             {/* Main small sphere */}
                             <div

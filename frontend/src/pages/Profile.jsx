@@ -4,14 +4,13 @@ import Footer from "../components/Footer";
 
 const ProfilePage = () => {
     return (
-        <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#1a0525] via-[#042248] to-[#540a63] overflow-hidden relative">
+        <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#260d34] via-[#000408] to-[#350754] overflow-hidden relative">
             <Navbar />
 
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[200px] bg-[#b8aee5] opacity-90 blur-[180px] rounded-full z-0" />
+            {/*<div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[600px] h-[200px] bg-[#b8aee5] opacity-90 blur-[180px] rounded-full z-0" />*/}
 
-            <div className="absolute bottom-0 left-40 transform translate-x-[-20%] translate-y-[40%] z-[1]">
+            <div className="absolute bottom-0 left-16 transform translate-x-[-20%] animate-float translate-y-[40%] z-[1]">
                 <div className="relative">
-                    {/* Main sphere */}
                     <div
                         className="w-80 h-80 rounded-full relative"
                         style={{
@@ -20,7 +19,6 @@ const ProfilePage = () => {
                             animation: 'sphereGlow 4s ease-in-out infinite alternate'
                         }}
                     >
-                        {/* Inner highlight */}
                         <div
                             className="absolute top-8 left-8 w-16 h-16 rounded-full"
                             style={{
@@ -28,8 +26,6 @@ const ProfilePage = () => {
                                 filter: 'blur(4px)'
                             }}
                         />
-
-                        {/* Surface reflections */}
                         <div
                             className="absolute top-12 left-12 w-8 h-8 rounded-full"
                             style={{
@@ -38,8 +34,6 @@ const ProfilePage = () => {
                             }}
                         />
                     </div>
-
-                    {/* Outer glow rings */}
                     <div
                         className="absolute inset-0 w-80 h-80 rounded-full animate-pulse"
                         style={{
@@ -47,8 +41,6 @@ const ProfilePage = () => {
                             animation: 'pulseGlow 3s ease-in-out infinite'
                         }}
                     />
-
-                    {/* Larger outer glow */}
                     <div
                         className="absolute inset-0 w-96 h-96 rounded-full -translate-x-8 -translate-y-8"
                         style={{
@@ -60,7 +52,7 @@ const ProfilePage = () => {
             </div>
 
             <main className="flex-grow flex items-center justify-center pt-32 pb-20 relative z-10 px-4">
-                <div className="absolute top-[120px] md:top-[80px] left-[280px] md:left-[1200px] transform translate-x-[-50%] translate-y-[-50%] z-[-1]">
+                <div className="absolute top-[120px] md:top-[80px] left-[280px] md:left-[1200px] transform translate-x-[-50%] animate-float translate-y-[-50%] z-[-1]">
                     <div className="relative">
                         {/* Main small sphere */}
                         <div
@@ -146,7 +138,7 @@ const ProfilePage = () => {
 
                         <div>
                             <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Your Agents</h3>
-                            <p className="text-white/70 italic">No agents created yet.</p>
+                            <p className="text-white/70 italic transition opacity-0 animate-slideInBottom delay-[400ms]">No agents created yet.</p>
                         </div>
                     </div>
                 </div>
