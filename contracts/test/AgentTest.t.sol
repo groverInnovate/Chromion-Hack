@@ -7,7 +7,7 @@ import {Agent} from "../src/Agent.sol";
 import {DeployAgent} from "../script/DeployAgent.s.sol";
 import {Platform} from "../src/PlatformType.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
-import {MockUSDT} from "../src/mocks/MockUSDT.sol";
+import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
 
 contract AgentTest is Test {
@@ -18,7 +18,7 @@ contract AgentTest is Test {
     Agent agent;
     DeployAgent deployer;
     MockDAI dai;
-    MockUSDT usdt;
+    MockMKR mkr;
     MockWETH weth;
     address authorizedSigner;
     address owner = makeAddr("owner");
@@ -31,7 +31,7 @@ contract AgentTest is Test {
         );
     bytes32 private constant TYPE_HASH =
         keccak256(
-            "TradeData(address tokenIn,address tokenOut,uint24 fee,uint256 amountIn,uint256 minAmountOut,uint256 maxAmountOut,uint256 deadline,uint256 nonce)"
+            "TradeData(address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 deadline,uint256 nonce)"
         );
 
     /*//////////////////////////////////////////////////////////////
@@ -50,14 +50,11 @@ contract AgentTest is Test {
         );
         dai = MockDAI(agentInfo.tokens[0]);
         weth = MockWETH(agentInfo.tokens[1]);
-        usdt = MockUSDT(agentInfo.tokens[2]);
+        mkr = MockMKR(agentInfo.tokens[2]);
         testTradeData = Agent.TradeData({
-            tokenIn: address(dai),
-            tokenOut: address(weth),
-            fee: 3000,
+            tokenOut: address(dai),
             amountIn: 1 ether,
             minAmountOut: 0.9 ether,
-            maxAmountOut: 1.1 ether,
             deadline: block.timestamp + 1 hours,
             nonce: 1
         });
@@ -76,7 +73,7 @@ contract AgentTest is Test {
         assertEq(agentInfo.tokens.length, 3);
         assertEq(agentInfo.tokens[0], address(dai));
         assertEq(agentInfo.tokens[1], address(weth));
-        assertEq(agentInfo.tokens[2], address(usdt));
+        assertEq(agentInfo.tokens[2], address(mkr));
         assertEq(agentInfo.amountInvested, 1 ether);
         assertEq(uint256(agentInfo.platformType), uint256(Platform.Twitter));
     }
@@ -87,8 +84,8 @@ contract AgentTest is Test {
         address[] memory newTokens = new address[](2);
         address[] memory newTokenAgain = new address[](1);
         newTokens[0] = address(dai);
-        newTokens[1] = address(usdt);
-        newTokenAgain[0] = address(usdt);
+        newTokens[1] = address(mkr);
+        newTokenAgain[0] = address(mkr);
         vm.startPrank(owner);
         Agent newAgent = factory.createAgent{value: 2 ether}(
             newTokens,
@@ -110,13 +107,13 @@ contract AgentTest is Test {
         assertEq(agentNew.owner, owner);
         assertEq(agentNew.tokens.length, 2);
         assertEq(agentNew.tokens[0], address(dai));
-        assertEq(agentNew.tokens[1], address(usdt));
+        assertEq(agentNew.tokens[1], address(mkr));
         assertEq(agentNew.amountInvested, 2 ether);
         assertEq(uint256(agentNew.platformType), uint256(Platform.Discord));
         assertEq(agentNewAgain.agentAddress, address(newAgentAgain));
         assertEq(agentNewAgain.owner, owner);
         assertEq(agentNewAgain.tokens.length, 1);
-        assertEq(agentNewAgain.tokens[0], address(usdt));
+        assertEq(agentNewAgain.tokens[0], address(mkr));
         assertEq(agentNewAgain.amountInvested, 3 ether);
         assertEq(
             uint256(agentNewAgain.platformType),
@@ -193,15 +190,11 @@ contract AgentTest is Test {
     }
 
     // function testExecuteSwapWithValidSignature() external {
-    //     address token1 = address(dai);
     //     address token2 = address(weth);
     //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenIn: token1,
     //         tokenOut: token2,
-    //         fee: 3000,
     //         amountIn: 1,
     //         minAmountOut: 1,
-    //         maxAmountOut: 2,
     //         deadline: block.timestamp + 1 hours,
     //         nonce: 1001
     //     });
@@ -214,15 +207,11 @@ contract AgentTest is Test {
     // }
 
     function testExecuteSwapWithInvalidSignature() external {
-        address token1 = address(dai);
         address token2 = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenIn: token1,
             tokenOut: token2,
-            fee: 3000,
             amountIn: 1,
             minAmountOut: 1,
-            maxAmountOut: 2,
             deadline: block.timestamp + 1 hours,
             nonce: 1002
         });
@@ -237,15 +226,11 @@ contract AgentTest is Test {
     }
 
     function testExecuteSwapWithExpiredDeadline() external {
-        address token1 = address(weth);
         address token2 = address(dai);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenIn: token1,
             tokenOut: token2,
-            fee: 3000,
             amountIn: 1,
             minAmountOut: 1,
-            maxAmountOut: 2,
             deadline: block.timestamp - 1,
             nonce: 1003
         });
@@ -259,15 +244,11 @@ contract AgentTest is Test {
     }
 
     function testExecuteSwapWithInvalidSignatureLength() external {
-        address token1 = address(usdt);
         address token2 = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenIn: token1,
             tokenOut: token2,
-            fee: 3000,
             amountIn: 1,
             minAmountOut: 1,
-            maxAmountOut: 2,
             deadline: block.timestamp + 1 hours,
             nonce: 1004
         });
@@ -281,15 +262,11 @@ contract AgentTest is Test {
     }
 
     // function testExecuteSwapWithUsedNonce() external {
-    //     address token1 = address(dai);
     //     address token2 = address(weth);
     //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenIn: token1,
     //         tokenOut: token2,
-    //         fee: 3000,
     //         amountIn: 1,
     //         minAmountOut: 1,
-    //         maxAmountOut: 2,
     //         deadline: block.timestamp + 1 hours,
     //         nonce: 1005
     //     });
@@ -304,15 +281,11 @@ contract AgentTest is Test {
     // }
 
     function testSignTradeDataProducesCorrectDigest() external view {
-        address token1 = address(weth);
         address token2 = address(dai);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenIn: token1,
             tokenOut: token2,
-            fee: 3000,
             amountIn: 1,
             minAmountOut: 1,
-            maxAmountOut: 2,
             deadline: block.timestamp + 1 hours,
             nonce: 12345
         });
@@ -320,12 +293,9 @@ contract AgentTest is Test {
         bytes32 structHash = keccak256(
             abi.encode(
                 TYPE_HASH,
-                trade.tokenIn,
                 trade.tokenOut,
-                trade.fee,
                 trade.amountIn,
                 trade.minAmountOut,
-                trade.maxAmountOut,
                 trade.deadline,
                 trade.nonce
             )
@@ -348,12 +318,9 @@ contract AgentTest is Test {
         bytes32 structHash = keccak256(
             abi.encode(
                 TYPE_HASH,
-                data.tokenIn,
                 data.tokenOut,
-                data.fee,
                 data.amountIn,
                 data.minAmountOut,
-                data.maxAmountOut,
                 data.deadline,
                 data.nonce
             )

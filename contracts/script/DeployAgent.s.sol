@@ -10,7 +10,7 @@ import {Agent} from "../src/Agent.sol";
 import {Platform} from "../src/PlatformType.sol";
 import {DeployMocks} from "./DeployMocks.s.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
-import {MockUSDT} from "../src/mocks/MockUSDT.sol";
+import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
 
 contract DeployAgent is Script {
@@ -21,24 +21,25 @@ contract DeployAgent is Script {
     uint256 constant INITIAL_BALANCE = 10 ether;
     DeployMocks mockDeployer;
     MockDAI dai;
-    MockUSDT usdt;
+    MockMKR mkr;
     MockWETH weth;
+    uint256 signerPrivateKey = 0xA11CE;
+    address authorizedSigner = vm.addr(signerPrivateKey);
 
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function run(
-        address authorizedSigner
     ) external returns (AgentFactory, Agent) {
         vm.deal(owner, INITIAL_BALANCE);
         vm.startBroadcast(owner);
         mockDeployer = new DeployMocks();
-        (dai, weth, usdt) = mockDeployer.run();
+        (dai, weth, mkr) = mockDeployer.run();
         AgentFactory factory = new AgentFactory();
         address[] memory tokenArray = new address[](3);
         tokenArray[0] = address(dai);
         tokenArray[1] = address(weth);
-        tokenArray[2] = address(usdt);
+        tokenArray[2] = address(mkr);
         Agent agent = factory.createAgent{value: 1 ether}(
             tokenArray,
             Platform.Twitter,

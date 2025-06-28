@@ -4,15 +4,13 @@ pragma solidity 0.8.20;
 /*//////////////////////////////////////////////////////////////
                             IMPORTS
 //////////////////////////////////////////////////////////////*/
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "../../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 
-contract MockUSDT is
-    ERC20 // 0x38e60B6C0b4Cd72C603bf8dC1e05ccb02F5E296b
-{
+contract MockMKR is ERC20 {
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    constructor() ERC20("USDT", "USDT") {}
+    constructor() ERC20("Maker", "MKR") {}
 
     /*//////////////////////////////////////////////////////////////
                             EXTERNAL FUNCTIONS
