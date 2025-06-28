@@ -19,7 +19,7 @@ const MultiSelectDropdown = () => {
     <div className="relative w-full md:w-1/2 z-50">
       <div
         onClick={toggleDropdown}
-        className="w-full bg-white/10 backdrop-blur-lg text-white px-4 py-3 rounded-md border border-white/20 cursor-pointer"
+        className="w-full bg-white/10 backdrop-blur-lg text-white px-4 py-3 rounded-md border border-white/20 cursor-pointer z-50"
       >
         {selectedTokens.length > 0
           ? selectedTokens.join(", ")
@@ -31,7 +31,7 @@ const MultiSelectDropdown = () => {
           {options.map((token) => (
             <div
               key={token}
-              className={`px-4 py-2 cursor-pointer text-white hover:bg-purple-500/30 transition ${
+              className={`px-4 py-2 cursor-pointer text-white hover:bg-purple-500/30 z-50 transition ${
                 selectedTokens.includes(token) ? "bg-purple-500/20" : ""
               }`}
               onClick={() => handleOptionClick(token)}

@@ -5,12 +5,18 @@ import MultiSelectDropdown from "../components/MultiSelect";
 
 const CreateAgentPage = () => {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br  from-[#1a0924] via-[#000408] to-[#350754]  overflow-hidden relative">
+    <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
       <Navbar />
+      <iframe
+        src="https://sincere-polygon-333639.framer.app/404-2"
+        className="absolute top-0 left-40 w-[150vw] h-[150vh] scale-[1.2] z-[0]"
+        frameBorder="0"
+        allowFullScreen
+      />
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[1200px] h-[200px] bg-[#705fbe] opacity-90 blur-[180px] rounded-full z-0" />
 
-      <div className="absolute bottom-0 md:top-[290px] md:left-[250px] transform translate-x-[-20%] translate-y-[40%] z-[1]">
+      <div className="absolute bottom-0 md:top-[290px] md:left-[1000px] transform translate-x-[-20%] translate-y-[40%] opacity-70 z-[1]">
         <div className="relative">
           <div
             className="w-80 h-80 rounded-full relative"
@@ -58,7 +64,7 @@ const CreateAgentPage = () => {
 
       <main className="flex-grow flex flex-col items-center justify-center px-4 pt-36 pb-20 relative z-10">
         <div>
-          <div className="absolute top-[120px] md:top-[290px] left-[280px] md:left-[1150px] transform translate-x-[-50%] translate-y-[-50%] animate-float z-[-1]">
+          <div className="absolute top-[120px] md:top-[20px] left-[280px] md:left-[1400px] transform translate-x-[-50%] translate-y-[-50%] animate-float opacity-70 z-[-1]">
             <div className="relative">
 
               <div
@@ -97,7 +103,7 @@ const CreateAgentPage = () => {
             </div>
           </div>
 
-          <div className="absolute top-[120px] md:top-[20px] left-[280px] md:left-[520px] transform translate-x-[-50%] translate-y-[-50%] animate-float z-[-1]">
+          <div className="absolute top-[120px] md:top-[400px] left-[280px] md:left-[40px] transform translate-x-[-50%] translate-y-[-50%] animate-float opacity-60 z-[-1]">
             <div className="relative">
 
               <div
@@ -134,8 +140,8 @@ const CreateAgentPage = () => {
                 }}
               />
             </div>
-          </div> 
-        </div> 
+          </div>
+        </div>
 
         <h1 className="text-4xl md:text-6xl font-bold mb-6 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] py-2 text-transparent bg-clip-text opacity-0 animate-slideInLeft delay-[400ms]">
           Create A New Agent
@@ -171,7 +177,7 @@ const CreateAgentPage = () => {
           <input
             type="number"
             placeholder="Enter Maximum Spend Amount"
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
+            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 z-0 transition opacity-0 animate-slideInBottom delay-[800ms]"
           />
 
           <label className="flex items-center gap-3 text-white">
