@@ -6,8 +6,8 @@ import AgentCard from "./AgentCard";
 
 const ProfilePage = () => {
     const [agents, setAgents] = useState([
-        { id: 1, name: "Arbitrage Alpha", description: "Scans exchanges for ETH price differences", paused: false },
-        { id: 2, name: "DeFi Hunter", description: "Monitors DeFi pools", paused: true },
+        { id: 1, name: "Agent 1", description: "Scans exchanges for ETH price differences", paused: false },
+        { id: 2, name: "Agent 2", description: "Monitors DeFi pools", paused: true },
     ]);
     const [selectedAgent, setSelectedAgent] = useState(null);
 

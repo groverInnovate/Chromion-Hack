@@ -191,7 +191,7 @@ const CreateAgentPage = () => {
             <p className="ml-1 py-4 text-white">Enter Maximum Spend Amount</p>
             <input
               type="number"
-              placeholder="Max Amount"
+              placeholder="Enter Amount"
               className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 z-0 transition opacity-0 animate-slideInBottom delay-[800ms]"
             />
           </div>

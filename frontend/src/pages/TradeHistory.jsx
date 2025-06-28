@@ -6,22 +6,31 @@ const TradeHistoryPage = () => {
     const [trades, setTrades] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // useEffect(() => {
-    //     async function fetchTradeData() {
-    //         try {
-    //             const response = await fetch("/api/trade-history");
-    //             const data = await response.json();
-    //             setTrades(data);
-    //         } catch (err) {
-    //             console.error("Failed to fetch trade history", err);
-    //             setTrades([]); // fallback empty
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     }
-
-    //     fetchTradeData();
-    // }, []);
+    useEffect(() => {
+        setTimeout(() => {
+            setTrades([
+                {
+                    tokenIn: "ETH",
+                    tokenOut: "USDC",
+                    amountIn: "0.5",
+                    amountOut: "1750",
+                },
+                {
+                    tokenIn: "BTC",
+                    tokenOut: "ETH",
+                    amountIn: "0.1",
+                    amountOut: "1.4",
+                },
+                {
+                    tokenIn: "MATIC",
+                    tokenOut: "USDT",
+                    amountIn: "100",
+                    amountOut: "62",
+                },
+            ]);
+            setLoading(false);
+        }, 1000);
+    }, []);
 
     return (
         <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
@@ -180,13 +189,13 @@ const TradeHistoryPage = () => {
                 ) : trades.length === 0 ? (
                     <div className="text-white/70 text-lg">No trades available.</div>
                 ) : (
-                    <div className="w-full max-w-4xl bg-white/5 backdrop-blur-md border border-white/20 rounded-xl shadow-lg overflow-hidden">
+                    <div className="w-full max-w-5xl mt-10 bg-[#170720]/50 backdrop-blur-md border border-white/30 rounded-2xl py-8 mb-4 shadow-lg  text-white overflow-hidden">
                         <table className="w-full text-left">
-                            <thead className="bg-white/10 text-white/80">
+                            <thead className="bg-white/10 text-[20px] py-20">
                                 <tr>
-                                    <th className="py-3 px-4">Token In</th>
+                                    <th className="py-3 px-5">Token In</th>
                                     <th className="py-3 px-4">Token Out</th>
-                                    <th className="py-3 px-4">Amount In</th>
+                                    <th className="py-3 px-5">Amount In</th>
                                     <th className="py-3 px-4">Amount Out</th>
                                 </tr>
                             </thead>
@@ -194,11 +203,11 @@ const TradeHistoryPage = () => {
                                 {trades.map((trade, i) => (
                                     <tr
                                         key={i}
-                                        className="border-t border-white/10 hover:bg-white/10 transition"
+                                        className="border-t text-[16px] border-white/10 hover:bg-white/10 transition"
                                     >
-                                        <td className="py-3 px-4">{trade.tokenIn}</td>
+                                        <td className="py-3 px-5">{trade.tokenIn}</td>
                                         <td className="py-3 px-4">{trade.tokenOut}</td>
-                                        <td className="py-3 px-4">{trade.amountIn}</td>
+                                        <td className="py-3 px-5">{trade.amountIn}</td>
                                         <td className="py-3 px-4">{trade.amountOut}</td>
                                     </tr>
                                 ))}
