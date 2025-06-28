@@ -29,8 +29,7 @@ contract DeployAgent is Script {
     /*//////////////////////////////////////////////////////////////
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
-    function run(
-    ) external returns (AgentFactory, Agent) {
+    function run() external returns (AgentFactory, Agent) {
         vm.deal(owner, INITIAL_BALANCE);
         vm.startBroadcast(owner);
         mockDeployer = new DeployMocks();

@@ -4,14 +4,14 @@ pragma solidity 0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
-import {MockUSDT} from "../src/mocks/MockUSDT.sol";
+import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {DeployMocks} from "../script/DeployMocks.s.sol";
 
 contract MockTokenTest is Test {
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
-    MockUSDT usdt;
+    MockMKR mkr;
     MockDAI dai;
     MockWETH weth;
     DeployMocks deployer;
@@ -20,7 +20,7 @@ contract MockTokenTest is Test {
 
     function setUp() external {
         deployer = new DeployMocks();
-        (dai, weth, usdt) = deployer.run();
+        (dai, weth, mkr) = deployer.run();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -82,31 +82,31 @@ contract MockTokenTest is Test {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            MOCKUSDT TESTS
+                            MOCKMKR TESTS
     //////////////////////////////////////////////////////////////*/
-    function testUSDTMintTransferAndBurn() external {
+    function testMKRMintTransferAndBurn() external {
         uint256 mintAmount = 5 ether;
-        usdt.mint(user, mintAmount);
-        assertEq(usdt.balanceOf(user), mintAmount);
+        mkr.mint(user, mintAmount);
+        assertEq(mkr.balanceOf(user), mintAmount);
 
         vm.startPrank(user);
-        usdt.transfer(recipient, 2 ether);
+        mkr.transfer(recipient, 2 ether);
         vm.stopPrank();
 
-        assertEq(usdt.balanceOf(user), 3 ether);
-        assertEq(usdt.balanceOf(recipient), 2 ether);
+        assertEq(mkr.balanceOf(user), 3 ether);
+        assertEq(mkr.balanceOf(recipient), 2 ether);
 
         vm.startPrank(user);
-        usdt.burn(user, 1 ether);
+        mkr.burn(user, 1 ether);
         vm.stopPrank();
 
-        assertEq(usdt.balanceOf(user), 2 ether);
-        assertEq(usdt.totalSupply(), 4 ether);
+        assertEq(mkr.balanceOf(user), 2 ether);
+        assertEq(mkr.totalSupply(), 4 ether);
     }
 
-    function testUSDTTokenMetadata() external view {
-        assertEq(usdt.name(), "USDT");
-        assertEq(usdt.symbol(), "USDT");
-        assertEq(usdt.decimals(), 18);
+    function testMKRTokenMetadata() external view {
+        assertEq(mkr.name(), "Maker");
+        assertEq(mkr.symbol(), "MKR");
+        assertEq(mkr.decimals(), 18);
     }
 }

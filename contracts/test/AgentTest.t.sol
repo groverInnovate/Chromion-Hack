@@ -9,6 +9,9 @@ import {Platform} from "../src/PlatformType.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
 import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
+import {MockDAI} from "../src/mocks/MockDAI.sol";
+import {MockMKR} from "../src/mocks/MockMKR.sol";
+import {MockWETH} from "../src/mocks/MockWETH.sol";
 
 contract AgentTest is Test {
     /*//////////////////////////////////////////////////////////////
@@ -17,6 +20,9 @@ contract AgentTest is Test {
     AgentFactory factory;
     Agent agent;
     DeployAgent deployer;
+    MockDAI dai;
+    MockMKR mkr;
+    MockWETH weth;
     MockDAI dai;
     MockMKR mkr;
     MockWETH weth;
@@ -32,6 +38,7 @@ contract AgentTest is Test {
     bytes32 private constant TYPE_HASH =
         keccak256(
             "TradeData(address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 deadline,uint256 nonce)"
+            "TradeData(address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 deadline,uint256 nonce)"
         );
 
     /*//////////////////////////////////////////////////////////////
@@ -43,7 +50,7 @@ contract AgentTest is Test {
         vm.deal(owner, INITIAL_BALANCE);
 
         deployer = new DeployAgent();
-        (factory, agent) = deployer.run(authorizedSigner);
+        (factory, agent) = deployer.run();
         AgentFactory.AgentInfo memory agentInfo = factory.getAgentInfo(
             owner,
             0
@@ -52,6 +59,7 @@ contract AgentTest is Test {
         weth = MockWETH(agentInfo.tokens[1]);
         mkr = MockMKR(agentInfo.tokens[2]);
         testTradeData = Agent.TradeData({
+            tokenOut: address(dai),
             tokenOut: address(dai),
             amountIn: 1 ether,
             minAmountOut: 0.9 ether,
@@ -64,6 +72,7 @@ contract AgentTest is Test {
                          AGENT FACTORY FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function testCreatedAgent() external view {
+    function testCreatedAgent() external view {
         AgentFactory.AgentInfo memory agentInfo = factory.getAgentInfo(
             owner,
             0
@@ -71,6 +80,9 @@ contract AgentTest is Test {
         assertEq(agentInfo.agentAddress, address(agent));
         assertEq(agentInfo.owner, owner);
         assertEq(agentInfo.tokens.length, 3);
+        assertEq(agentInfo.tokens[0], address(dai));
+        assertEq(agentInfo.tokens[1], address(weth));
+        assertEq(agentInfo.tokens[2], address(mkr));
         assertEq(agentInfo.tokens[0], address(dai));
         assertEq(agentInfo.tokens[1], address(weth));
         assertEq(agentInfo.tokens[2], address(mkr));
@@ -83,6 +95,9 @@ contract AgentTest is Test {
     {
         address[] memory newTokens = new address[](2);
         address[] memory newTokenAgain = new address[](1);
+        newTokens[0] = address(dai);
+        newTokens[1] = address(mkr);
+        newTokenAgain[0] = address(mkr);
         newTokens[0] = address(dai);
         newTokens[1] = address(mkr);
         newTokenAgain[0] = address(mkr);
@@ -102,10 +117,16 @@ contract AgentTest is Test {
             owner,
             2
         );
+        AgentFactory.AgentInfo memory agentNewAgain = factory.getAgentInfo(
+            owner,
+            2
+        );
         vm.stopPrank();
         assertEq(agentNew.agentAddress, address(newAgent));
         assertEq(agentNew.owner, owner);
         assertEq(agentNew.tokens.length, 2);
+        assertEq(agentNew.tokens[0], address(dai));
+        assertEq(agentNew.tokens[1], address(mkr));
         assertEq(agentNew.tokens[0], address(dai));
         assertEq(agentNew.tokens[1], address(mkr));
         assertEq(agentNew.amountInvested, 2 ether);
@@ -114,7 +135,12 @@ contract AgentTest is Test {
         assertEq(agentNewAgain.owner, owner);
         assertEq(agentNewAgain.tokens.length, 1);
         assertEq(agentNewAgain.tokens[0], address(mkr));
+        assertEq(agentNewAgain.tokens[0], address(mkr));
         assertEq(agentNewAgain.amountInvested, 3 ether);
+        assertEq(
+            uint256(agentNewAgain.platformType),
+            uint256(Platform.Telegram)
+        );
         assertEq(
             uint256(agentNewAgain.platformType),
             uint256(Platform.Telegram)
@@ -189,15 +215,15 @@ contract AgentTest is Test {
         assertEq(agent.getDomainSeparator(), expectedDomainSeparator);
     }
 
-    // function testExecuteSwapWithValidSignature() external {
-    //     address token2 = address(weth);
-    //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenOut: token2,
-    //         amountIn: 1,
-    //         minAmountOut: 1,
-    //         deadline: block.timestamp + 1 hours,
-    //         nonce: 1001
-    //     });
+    function testExecuteSwapWithValidSignature() external {
+        address token = address(weth);
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: 1,
+            minAmountOut: 1,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1001
+        });
 
     //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
@@ -207,9 +233,9 @@ contract AgentTest is Test {
     // }
 
     function testExecuteSwapWithInvalidSignature() external {
-        address token2 = address(weth);
+        address token = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenOut: token2,
+            tokenOut: token,
             amountIn: 1,
             minAmountOut: 1,
             deadline: block.timestamp + 1 hours,
@@ -226,9 +252,9 @@ contract AgentTest is Test {
     }
 
     function testExecuteSwapWithExpiredDeadline() external {
-        address token2 = address(dai);
+        address token = address(dai);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenOut: token2,
+            tokenOut: token,
             amountIn: 1,
             minAmountOut: 1,
             deadline: block.timestamp - 1,
@@ -244,9 +270,9 @@ contract AgentTest is Test {
     }
 
     function testExecuteSwapWithInvalidSignatureLength() external {
-        address token2 = address(weth);
+        address token = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenOut: token2,
+            tokenOut: token,
             amountIn: 1,
             minAmountOut: 1,
             deadline: block.timestamp + 1 hours,
@@ -261,15 +287,15 @@ contract AgentTest is Test {
         vm.stopPrank();
     }
 
-    // function testExecuteSwapWithUsedNonce() external {
-    //     address token2 = address(weth);
-    //     Agent.TradeData memory trade = Agent.TradeData({
-    //         tokenOut: token2,
-    //         amountIn: 1,
-    //         minAmountOut: 1,
-    //         deadline: block.timestamp + 1 hours,
-    //         nonce: 1005
-    //     });
+    function testExecuteSwapWithUsedNonce() external {
+        address token = address(weth);
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: 1,
+            minAmountOut: 1,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1005
+        });
 
     //     bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
@@ -281,9 +307,9 @@ contract AgentTest is Test {
     // }
 
     function testSignTradeDataProducesCorrectDigest() external view {
-        address token2 = address(dai);
+        address token = address(dai);
         Agent.TradeData memory trade = Agent.TradeData({
-            tokenOut: token2,
+            tokenOut: token,
             amountIn: 1,
             minAmountOut: 1,
             deadline: block.timestamp + 1 hours,

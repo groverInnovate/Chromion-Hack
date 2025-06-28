@@ -21,13 +21,9 @@ contract DeployMocks is Script {
                                 FUNCTIONS
     //////////////////////////////////////////////////////////////*/
     function run() external returns (MockDAI, MockWETH, MockMKR) {
-        vm.startBroadcast();
-
         dai = new MockDAI();
         weth = new MockWETH();
         mkr = new MockMKR();
-
-        vm.stopBroadcast();
 
         return (dai, weth, mkr);
     }
