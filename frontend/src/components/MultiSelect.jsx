@@ -16,8 +16,7 @@ const MultiSelectDropdown = () => {
   };
 
   return (
-    <div className="relative w-full md:w-1/2">
-      {/* Display selected tokens */}
+    <div className="relative w-full md:w-1/2 z-50">
       <div
         onClick={toggleDropdown}
         className="w-full bg-white/10 backdrop-blur-lg text-white px-4 py-3 rounded-md border border-white/20 cursor-pointer"
@@ -27,9 +26,8 @@ const MultiSelectDropdown = () => {
           : "Select Token(s)"}
       </div>
 
-      {/* Dropdown options */}
       {isOpen && (
-        <div className="absolute mt-2 w-full bg-[#1f1f2f] border border-white/20 rounded-md shadow-lg z-10">
+        <div className="absolute mt-2 w-full bg-[#1f1f2f] border border-white/20 rounded-md shadow-lg z-50">
           {options.map((token) => (
             <div
               key={token}
