@@ -16,14 +16,14 @@ const MultiSelectDropdown = () => {
   };
 
   return (
-    <div className="relative w-full md:w-1/2 z-50">
+    <div className="relative w-full z-50">
       <div
         onClick={toggleDropdown}
         className="w-full bg-white/10 backdrop-blur-lg text-white px-4 py-3 rounded-md border border-white/20 cursor-pointer z-50"
       >
         {selectedTokens.length > 0
           ? selectedTokens.join(", ")
-          : "Select Token(s)"}
+          : "Token(s)"}
       </div>
 
       {isOpen && (
