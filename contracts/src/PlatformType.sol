@@ -9,3 +9,4 @@ enum Platform {
     Telegram,
     Discord
 }
+
