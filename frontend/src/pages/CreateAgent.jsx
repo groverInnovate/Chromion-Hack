@@ -2,8 +2,46 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import MultiSelectDropdown from "../components/MultiSelect";
+import {deployAgent} from "../utils/DeployAgent";
 
 const CreateAgentPage = () => {
+
+    const [platformType, setPlatformType] = React.useState("");
+    const [agentName, setAgentName] = React.useState("");
+    const [description, setDescription] = React.useState("");
+    const [maxSpend, setMaxSpend] = React.useState("");
+    const [selectedTokens,setSelectedTokens] = React.useState([]);
+    const [errorMessage,setErrorMessage] = React.useState("");
+    
+    const handleSubmit = async(e) => {
+      e.preventDefault();
+
+      let deployParams={
+        platformType: platformType,
+        agentName,
+        description,
+        maxSpend,
+        selectedTokens,
+      };
+    
+      try {
+    const receipt = await deployAgent(deployParams);
+    console.log("Agent successfully deployed!:", receipt);
+  } catch (err) {
+    console.error("Error deploying agent:", err);
+    if (err.code === "INSUFFICIENT_FUNDS") {
+        setErrorMessage("Not enough ETH in your wallet to deploy and fund the agent.");
+      } else if (err.code === 4001) {
+        setErrorMessage("Transaction was rejected by the user.");
+      } else {
+        setErrorMessage("Something went wrong during deployment.");
+      }
+  }
+
+    };
+
+
+  
   return (
     <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
       <Navbar />
@@ -150,11 +188,11 @@ const CreateAgentPage = () => {
           Design, describe and deploy your autonomous agent with ease.
         </p>
 
-        <form className="w-full max-w-3xl space-y-4 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg ">
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl space-y-4 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg ">
 
           <div>
             <p className=" ml-1 py-4 text-white">Source Type</p>
-            <select className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]">
+            <select onChange={(e) => setPlatformType(e.target.value)} required className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]">
               <option>Source Type</option>
               <option>Twitter</option>
               <option>Telegram</option>
@@ -164,7 +202,7 @@ const CreateAgentPage = () => {
 
           <div>
             <p className="ml-1 py-4 text-white">Name Your Agent</p>
-            <input
+            <input onChange={(e) => setAgentName(e.target.value)} required
               type="text"
               placeholder="@agentname"
               className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
@@ -173,7 +211,7 @@ const CreateAgentPage = () => {
 
           <div>
             <p className="ml-1 py-4 text-white">Write a short description</p>
-            <textarea
+            <textarea onChange={(e) => setDescription(e.target.value)} required
               placeholder="@shortdescription"
               rows={4}
               className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
@@ -183,13 +221,15 @@ const CreateAgentPage = () => {
           <div className="relative z-50">
             <p className="ml-1 py-4 text-white">Select Token(s)</p>
             <div className="flex flex-col md:flex-row gap-4 transition opacity-0 animate-slideInBottom delay-[800ms] ">
-              <MultiSelectDropdown />
+              <MultiSelectDropdown
+              selectedTokens={selectedTokens}
+              setSelectedTokens={setSelectedTokens}/>
             </div>
           </div>
 
           <div>
             <p className="ml-1 py-4 text-white">Enter Maximum Spend Amount</p>
-            <input
+            <input onChange={(e) => setMaxSpend(e.target.value)} required
               type="number"
               placeholder="Enter Amount"
               className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 z-0 transition opacity-0 animate-slideInBottom delay-[800ms]"
@@ -202,9 +242,10 @@ const CreateAgentPage = () => {
             </label>
           </div>
 
-          <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition transform duration-4ms ease-in-out hover:scale-[1.01] hover:shadow-lg opacity-0 animate-slideInBottom delay-[800ms]">
+          <button type="submit" className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition transform duration-4ms ease-in-out hover:scale-[1.01] hover:shadow-lg opacity-0 animate-slideInBottom delay-[800ms]">
             Deploy Agent
           </button>
+          {errorMessage && <div className="text-red-500 mt-2">{errorMessage}</div>}
         </form>
       </main>
 

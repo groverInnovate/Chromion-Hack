@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useHelpBox } from "./HelpBox.jsx";
+import {useWallet} from "../context/WalletContext.jsx";
 
 const Navbar = () => {
 
   const [currentPath, setCurrentPath] = useState("");
   const { openHelp } = useHelpBox();
-
+  const{address,connectWallet}=useWallet();
+  
   useEffect(() => {
     setCurrentPath(window.location.pathname);
   }, []);
@@ -30,9 +32,9 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
-          Connect Wallet
-        </button>
+        <button onClick={connectWallet} disabled={!!address} className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
+    {address ? `Connected` : "Connect Wallet"}
+  </button>
       </div>
     </div>
   );

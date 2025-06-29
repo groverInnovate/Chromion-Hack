@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 
-const MultiSelectDropdown = () => {
+const MultiSelectDropdown = ({selectedTokens,setSelectedTokens}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTokens, setSelectedTokens] = useState([]);
-  const options = ["ETH", "BTC", "USD" ,"DOGE"];
+  const options = ["DAI", "WETH", "MKR"];
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
