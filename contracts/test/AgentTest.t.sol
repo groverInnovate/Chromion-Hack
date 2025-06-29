@@ -9,6 +9,8 @@ import {Platform} from "../src/PlatformType.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
 import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
+import {MockAMM} from "../src/amm/MockAMM.sol";
+import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
 contract AgentTest is Test {
     /*//////////////////////////////////////////////////////////////
@@ -20,9 +22,12 @@ contract AgentTest is Test {
     MockDAI dai;
     MockMKR mkr;
     MockWETH weth;
+    MockAMM mockAMM;
     address authorizedSigner;
     address owner = makeAddr("owner");
-    uint256 constant INITIAL_BALANCE = 100 ether;
+    address user = makeAddr("user");
+    address user2 = makeAddr("user2");
+    uint256 constant INITIAL_BALANCE = 1_000_000 ether;
     uint256 private signerPrivateKey;
     Agent.TradeData testTradeData;
     bytes32 private constant EIP712_DOMAIN_TYPEHASH =
@@ -34,9 +39,6 @@ contract AgentTest is Test {
             "TradeData(address tokenOut,uint256 amountIn,uint256 minAmountOut,uint256 deadline,uint256 nonce)"
         );
 
-    /*//////////////////////////////////////////////////////////////
-                                FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
     function setUp() external {
         signerPrivateKey = 0xA11CE;
         authorizedSigner = vm.addr(signerPrivateKey);
@@ -48,9 +50,15 @@ contract AgentTest is Test {
             owner,
             0
         );
+        vm.startPrank(owner);
+        agent.addFunds{value: 1_000 ether}();
+        vm.stopPrank();
+        vm.deal(user, 10 ether);
+        vm.deal(user2, 10 ether);
         dai = MockDAI(agentInfo.tokens[0]);
         weth = MockWETH(agentInfo.tokens[1]);
         mkr = MockMKR(agentInfo.tokens[2]);
+        mockAMM = MockAMM(payable(agent.getMockAMM()));
         testTradeData = Agent.TradeData({
             tokenOut: address(dai),
             amountIn: 1 ether,
@@ -90,12 +98,14 @@ contract AgentTest is Test {
         Agent newAgent = factory.createAgent{value: 2 ether}(
             newTokens,
             Platform.Discord,
-            authorizedSigner
+            authorizedSigner,
+            agent.getMockAMM()
         );
         Agent newAgentAgain = factory.createAgent{value: 3 ether}(
             newTokenAgain,
             Platform.Telegram,
-            authorizedSigner
+            authorizedSigner,
+            agent.getMockAMM()
         );
         AgentFactory.AgentInfo memory agentNew = factory.getAgentInfo(owner, 1);
         AgentFactory.AgentInfo memory agentNewAgain = factory.getAgentInfo(
@@ -191,10 +201,15 @@ contract AgentTest is Test {
 
     function testExecuteSwapWithValidSignature() external {
         address token = address(weth);
+        uint256 swapAmount = 0.1 ether;
+
+        uint256 initialAgentBalance = address(agent).balance;
+        uint256 initialOwnerTokenBalance = weth.balanceOf(owner);
+
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
-            amountIn: 1,
-            minAmountOut: 1,
+            amountIn: swapAmount,
+            minAmountOut: 0,
             deadline: block.timestamp + 1 hours,
             nonce: 1001
         });
@@ -204,14 +219,18 @@ contract AgentTest is Test {
         vm.startPrank(authorizedSigner);
         agent.executeSwap(trade, sig);
         vm.stopPrank();
+
+        assertEq(address(agent).balance, initialAgentBalance - swapAmount);
+        assertGt(weth.balanceOf(owner), initialOwnerTokenBalance);
+        assertTrue(agent.isNonceUsed(1001));
     }
 
     function testExecuteSwapWithInvalidSignature() external {
         address token = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
-            amountIn: 1,
-            minAmountOut: 1,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
             deadline: block.timestamp + 1 hours,
             nonce: 1002
         });
@@ -229,8 +248,8 @@ contract AgentTest is Test {
         address token = address(dai);
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
-            amountIn: 1,
-            minAmountOut: 1,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
             deadline: block.timestamp - 1,
             nonce: 1003
         });
@@ -247,8 +266,8 @@ contract AgentTest is Test {
         address token = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
-            amountIn: 1,
-            minAmountOut: 1,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
             deadline: block.timestamp + 1 hours,
             nonce: 1004
         });
@@ -265,8 +284,8 @@ contract AgentTest is Test {
         address token = address(weth);
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
-            amountIn: 1,
-            minAmountOut: 1,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
             deadline: block.timestamp + 1 hours,
             nonce: 1005
         });
@@ -278,6 +297,178 @@ contract AgentTest is Test {
         vm.expectRevert(Agent.Agent__NonceAlreadyUsed.selector);
         agent.executeSwap(trade, sig);
         vm.stopPrank();
+    }
+
+    function testExecuteSwapWithMinAmountOut() external {
+        address token = address(dai);
+        uint256 swapAmount = 0.1 ether;
+
+        uint256 expectedOutput = mockAMM.getAmountOut(token, swapAmount);
+        uint256 minAmountOut = expectedOutput + 1; 
+
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: swapAmount,
+            minAmountOut: minAmountOut,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1006
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(); 
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testExecuteSwapWithValidMinAmountOut() external {
+        address token = address(dai);
+        uint256 swapAmount = 0.1 ether;
+
+        uint256 expectedOutput = mockAMM.getAmountOut(token, swapAmount);
+        uint256 minAmountOut = expectedOutput / 2; 
+
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: swapAmount,
+            minAmountOut: minAmountOut,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1007
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+
+        assertTrue(agent.isNonceUsed(1007));
+    }
+
+    function testExecuteSwapWithAllSupportedTokens() external {
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(dai);
+        tokens[1] = address(weth);
+        tokens[2] = address(mkr);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 nonce = 2000 + i;
+            uint256 swapAmount = 0.1 ether;
+
+            Agent.TradeData memory trade = Agent.TradeData({
+                tokenOut: tokens[i],
+                amountIn: swapAmount,
+                minAmountOut: 0,
+                deadline: block.timestamp + 1 hours,
+                nonce: nonce
+            });
+
+            bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+            vm.startPrank(authorizedSigner);
+            agent.executeSwap(trade, sig);
+            vm.stopPrank();
+
+            assertTrue(agent.isNonceUsed(nonce));
+        }
+    }
+
+    function testExecuteSwapWithLargeAmount() external {
+        address token = address(dai);
+        uint256 swapAmount = 10 ether; 
+
+        if (swapAmount > agent.getUserFunds()) {
+            vm.startPrank(owner);
+            agent.addFunds{value: swapAmount}();
+            vm.stopPrank();
+        }
+
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: swapAmount,
+            minAmountOut: 0,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1008
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+
+        assertTrue(agent.isNonceUsed(1008));
+    }
+
+    function testTokenTransferToOwnerAfterSwap() external {
+        address token = address(dai);
+        uint256 swapAmount = 1 ether;
+
+        uint256 initialAgentBalance = address(agent).balance;
+        uint256 initialOwnerTokenBalance = dai.balanceOf(owner);
+        uint256 initialAuthorizedSignerTokenBalance = dai.balanceOf(
+            authorizedSigner
+        );
+
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: swapAmount,
+            minAmountOut: 0,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1009
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+
+        assertEq(address(agent).balance, initialAgentBalance - swapAmount);
+
+        uint256 finalOwnerTokenBalance = dai.balanceOf(owner);
+        assertGt(finalOwnerTokenBalance, initialOwnerTokenBalance);
+
+        assertEq(
+            dai.balanceOf(authorizedSigner),
+            initialAuthorizedSignerTokenBalance
+        );
+
+        assertTrue(agent.isNonceUsed(1009));
+    }
+
+    function testTokenTransferToOwnerWithAllTokens() external {
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(dai);
+        tokens[1] = address(weth);
+        tokens[2] = address(mkr);
+
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 nonce = 3000 + i;
+            uint256 swapAmount = 0.5 ether;
+
+            uint256 initialOwnerBalance = IERC20(tokens[i]).balanceOf(owner);
+
+            Agent.TradeData memory trade = Agent.TradeData({
+                tokenOut: tokens[i],
+                amountIn: swapAmount,
+                minAmountOut: 0,
+                deadline: block.timestamp + 1 hours,
+                nonce: nonce
+            });
+
+            bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+            vm.startPrank(authorizedSigner);
+            agent.executeSwap(trade, sig);
+            vm.stopPrank();
+
+            uint256 finalOwnerBalance = IERC20(tokens[i]).balanceOf(owner);
+            assertGt(finalOwnerBalance, initialOwnerBalance);
+
+            assertTrue(agent.isNonceUsed(nonce));
+        }
     }
 
     function testSignTradeDataProducesCorrectDigest() external view {
@@ -311,6 +502,138 @@ contract AgentTest is Test {
         assertEq(helperSignature, expectedSignature);
     }
 
+    function testExecuteSwapWithInvalidToken() external {
+        address invalidToken = makeAddr("invalidToken");
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: invalidToken,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1011
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(Agent.Agent__InvalidTokens.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testExecuteSwapWithInsufficientFunds() external {
+        vm.startPrank(owner);
+        agent.withdrawFunds();
+        vm.stopPrank();
+
+        address token = address(weth);
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: 1 ether,
+            minAmountOut: 0,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1012
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+
+        vm.startPrank(authorizedSigner);
+        vm.expectRevert(); 
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testExecuteSwapWithWrongSigner() external {
+        address token = address(weth);
+        Agent.TradeData memory trade = Agent.TradeData({
+            tokenOut: token,
+            amountIn: 0.1 ether,
+            minAmountOut: 0,
+            deadline: block.timestamp + 1 hours,
+            nonce: 1013
+        });
+
+        bytes memory sig = _signTradeData(trade, signerPrivateKey);
+        address wrongSigner = makeAddr("wrongSigner");
+
+        vm.startPrank(wrongSigner);
+        vm.expectRevert(Agent.Agent__NotAuthorized.selector);
+        agent.executeSwap(trade, sig);
+        vm.stopPrank();
+    }
+
+    function testAddFundsWithZeroAmount() external {
+        vm.startPrank(owner);
+        vm.expectRevert(Agent.Agent__AmountIsZero.selector);
+        agent.addFunds{value: 0}();
+        vm.stopPrank();
+    }
+
+    function testMultipleUsersCreateAgents() external {
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(dai);
+
+        vm.startPrank(user);
+        Agent agent1 = factory.createAgent{value: 1 ether}(
+            tokens,
+            Platform.Twitter,
+            authorizedSigner,
+            agent.getMockAMM()
+        );
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        Agent agent2 = factory.createAgent{value: 2 ether}(
+            tokens,
+            Platform.Telegram,
+            authorizedSigner,
+            agent.getMockAMM()
+        );
+        vm.stopPrank();
+
+        AgentFactory.AgentInfo memory agentInfo1 = factory.getAgentInfo(
+            user,
+            0
+        );
+        AgentFactory.AgentInfo memory agentInfo2 = factory.getAgentInfo(
+            user2,
+            0
+        );
+
+        assertEq(agentInfo1.agentAddress, address(agent1));
+        assertEq(agentInfo2.agentAddress, address(agent2));
+        assertEq(agentInfo1.owner, user);
+        assertEq(agentInfo2.owner, user2);
+        assertEq(agentInfo1.amountInvested, 1 ether);
+        assertEq(agentInfo2.amountInvested, 2 ether);
+    }
+
+    function testCreateAgentWithLargeValue() external {
+        vm.startPrank(owner);
+        address[] memory tokens = new address[](1);
+        tokens[0] = address(dai);
+
+        uint256 largeValue = 1000 ether;
+        vm.deal(owner, largeValue + 1 ether);
+
+        Agent newAgent = factory.createAgent{value: largeValue}(
+            tokens,
+            Platform.Twitter,
+            authorizedSigner,
+            agent.getMockAMM()
+        );
+
+        AgentFactory.AgentInfo memory agentInfo = factory.getAgentInfo(
+            owner,
+            1
+        );
+        assertEq(agentInfo.amountInvested, largeValue);
+        assertEq(newAgent.getUserFunds(), largeValue);
+        vm.stopPrank();
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                           HELPER FUNCTIONS
+    //////////////////////////////////////////////////////////////*/
     function _signTradeData(
         Agent.TradeData memory data,
         uint256 privateKey
