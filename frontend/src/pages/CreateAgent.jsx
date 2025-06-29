@@ -2,21 +2,59 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import MultiSelectDropdown from "../components/MultiSelect";
+import {deployAgent} from "../utils/DeployAgent";
 
 const CreateAgentPage = () => {
+
+    const [platformType, setPlatformType] = React.useState("");
+    const [agentName, setAgentName] = React.useState("");
+    const [description, setDescription] = React.useState("");
+    const [maxSpend, setMaxSpend] = React.useState("");
+    const [selectedTokens,setSelectedTokens] = React.useState([]);
+    const [errorMessage,setErrorMessage] = React.useState("");
+    
+    const handleSubmit = async(e) => {
+      e.preventDefault();
+
+      let deployParams={
+        platformType: platformType,
+        agentName,
+        description,
+        maxSpend,
+        selectedTokens,
+      };
+    
+      try {
+    const receipt = await deployAgent(deployParams);
+    console.log("Agent successfully deployed!:", receipt);
+  } catch (err) {
+    console.error("Error deploying agent:", err);
+    if (err.code === "INSUFFICIENT_FUNDS") {
+        setErrorMessage("Not enough ETH in your wallet to deploy and fund the agent.");
+      } else if (err.code === 4001) {
+        setErrorMessage("Transaction was rejected by the user.");
+      } else {
+        setErrorMessage("Something went wrong during deployment.");
+      }
+  }
+
+    };
+
+
+  
   return (
     <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
       <Navbar />
       <iframe
         src="https://sincere-polygon-333639.framer.app/404-2"
-        className="absolute top-0 left-40 w-[150vw] h-[150vh] scale-[1.2] z-[0]"
+        className="absolute top-0 left-80 w-[150vh] h-[100%] scale-[3.2] z-[0]"
         frameBorder="0"
         allowFullScreen
       />
 
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-[1200px] h-[200px] bg-[#705fbe] opacity-90 blur-[180px] rounded-full z-0" />
 
-      <div className="absolute bottom-0 md:top-[290px] md:left-[1000px] transform translate-x-[-20%] translate-y-[40%] opacity-70 z-[1]">
+      <div className="absolute bottom-0 md:top-[290px] md:left-[1200px] transform translate-x-[-20%] translate-y-[40%] opacity-70 z-[1]">
         <div className="relative">
           <div
             className="w-80 h-80 rounded-full relative"
@@ -150,44 +188,64 @@ const CreateAgentPage = () => {
           Design, describe and deploy your autonomous agent with ease.
         </p>
 
-        <form className="w-full max-w-3xl space-y-6 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg ">
-          <select className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]">
-            <option>Source Type</option>
-            <option>Twitter</option>
-            <option>Telegram</option>
-            <option>Discord</option>
-          </select>
+        <form onSubmit={handleSubmit} className="w-full max-w-3xl space-y-4 bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-lg ">
 
-          <input
-            type="text"
-            placeholder="Name Your Agent"
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
-          />
-
-          <textarea
-            placeholder="Write a short description"
-            rows={4}
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
-          />
-
-          <div className="flex flex-col md:flex-row gap-4 transition opacity-0 animate-slideInBottom delay-[800ms] ">
-            <MultiSelectDropdown />
+          <div>
+            <p className=" ml-1 py-4 text-white">Source Type</p>
+            <select onChange={(e) => setPlatformType(e.target.value)} required className="w-full bg-transparent text-white placeholder-white/60 px-4 py-4 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]">
+              <option>Source Type</option>
+              <option>Twitter</option>
+              <option>Telegram</option>
+              <option>Discord</option>
+            </select>
           </div>
 
-          <input
-            type="number"
-            placeholder="Enter Maximum Spend Amount"
-            className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 z-0 transition opacity-0 animate-slideInBottom delay-[800ms]"
-          />
+          <div>
+            <p className="ml-1 py-4 text-white">Name Your Agent</p>
+            <input onChange={(e) => setAgentName(e.target.value)} required
+              type="text"
+              placeholder="@agentname"
+              className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
+            />
+          </div>
 
-          <label className="flex items-center gap-3 text-white">
-            <input type="checkbox" className="accent-purple-500 w-4 h-4" />
-            <span className="transition opacity-0 animate-slideInRight delay-[800ms]">I confirm the above strategy and approve deployment</span>
-          </label>
+          <div>
+            <p className="ml-1 py-4 text-white">Write a short description</p>
+            <textarea onChange={(e) => setDescription(e.target.value)} required
+              placeholder="@shortdescription"
+              rows={4}
+              className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 transition opacity-0 animate-slideInBottom delay-[800ms]"
+            />
+          </div>
 
-          <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition transform duration-4ms ease-in-out hover:scale-[1.01] hover:shadow-lg opacity-0 animate-slideInBottom delay-[800ms]">
+          <div className="relative z-50">
+            <p className="ml-1 py-4 text-white">Select Token(s)</p>
+            <div className="flex flex-col md:flex-row gap-4 transition opacity-0 animate-slideInBottom delay-[800ms] ">
+              <MultiSelectDropdown
+              selectedTokens={selectedTokens}
+              setSelectedTokens={setSelectedTokens}/>
+            </div>
+          </div>
+
+          <div>
+            <p className="ml-1 py-4 text-white">Enter Maximum Spend Amount</p>
+            <input onChange={(e) => setMaxSpend(e.target.value)} required
+              type="number"
+              placeholder="Enter Amount"
+              className="w-full bg-white/10 backdrop-blur-lg text-white placeholder-white/60 px-4 py-3 rounded-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-purple-400 z-0 transition opacity-0 animate-slideInBottom delay-[800ms]"
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-3 text-white">
+              <input type="checkbox" className="accent-purple-500 w-4 h-4" />
+              <span>I confirm the above strategy and approve deployment</span>
+            </label>
+          </div>
+
+          <button type="submit" className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold text-lg py-3 rounded-md transition transform duration-4ms ease-in-out hover:scale-[1.01] hover:shadow-lg opacity-0 animate-slideInBottom delay-[800ms]">
             Deploy Agent
           </button>
+          {errorMessage && <div className="text-red-500 mt-2">{errorMessage}</div>}
         </form>
       </main>
 

@@ -1,8 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import AgentControlBox from "../components/AgentCardBox";
+import AgentCard from "./AgentCard";
 
 const ProfilePage = () => {
+    const [agents, setAgents] = useState([
+        { id: 1, name: "Agent 1", description: "Scans exchanges for ETH price differences", paused: false },
+        { id: 2, name: "Agent 2", description: "Monitors DeFi pools", paused: true },
+    ]);
+    const [selectedAgent, setSelectedAgent] = useState(null);
+
+    const toggleAgentPause = (id) => {
+        setAgents((prev) =>
+            prev.map((agent) =>
+                agent.id === id ? { ...agent, paused: !agent.paused } : agent
+            )
+        );
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
             <Navbar />
@@ -99,7 +115,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="w-full max-w-6xl bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-20 text-white shadow-xl flex flex-col md:flex-row gap-10">
 
-                    <div className="flex flex-col items-center md:items-start text-center md:text-center ml-44 gap-4 md:w-1/3">
+                    <div className="flex flex-col items-center md:items-start text-center md:text-center ml-4 gap-2 md:w-1/3">
                         <img
                             src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=avatar"
                             alt="Profile Avatar"
@@ -108,7 +124,17 @@ const ProfilePage = () => {
                         <h2 className="text-4xl font-bold text-center pt-2 pb-4 bg-white text-transparent bg-clip-text">
                             Username
                         </h2>
-
+                        <div className="mt-2 bg-white text-black px-4 py-2 rounded-md text-sm inline-block">
+                            0x8kqr...FNUo
+                        </div>
+                        <a
+                            href="https://etherscan.io/address/0x8kqr...FNUo"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-400 text-sm py-4 underline hover:text-purple-300"
+                        >
+                            View on Etherscan ↗
+                        </a>
                     </div>
 
                     <div className="flex-1 space-y-8 ml-8 text-white/90 text-[20px] text-sm">
@@ -129,24 +155,38 @@ const ProfilePage = () => {
                                 <li>Favourite Pairs: ETH/USDC, BTC/ETH</li>
                             </ul>
                         </div> */}
-                        <div className="mt-2 bg-white text-black px-4 py-2 rounded-md text-sm inline-block">
-                            0x8kqr...FNUo
-                        </div>
-                        <div>
-                            <a
-                                href="https://etherscan.io/address/0x8kqr...FNUo"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-purple-400 text-sm py-2 underline hover:text-purple-300"
-                            >
-                                View on Etherscan ↗
-                            </a>
 
-                            <h3 className="text-[30px] font-semibold pt-8 text-purple-300 mb-4 ">Your Agents</h3>
-                            <p className="text-white/70 italic transition opacity-0 pt-6 animate-slideInBottom delay-[400ms]">No agents created yet.</p>
+                        <div>
+                            <h3 className="text-[30px] font-semibold pt-8 text-purple-300 mb-10 ">Your Agents</h3>
+                            {agents.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-6">
+                                    {agents.map((agent, index) => (
+                                        <AgentCard
+                                            key={agent.id}
+                                            index={index}
+                                            agent={agent}
+                                            onClick={setSelectedAgent}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-white/60">No agents created yet.</p>
+                            )}
+
+                            {selectedAgent && (
+                                <>
+                                    <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-[999]" />
+                                    <AgentControlBox
+                                        agent={selectedAgent}
+                                        onClose={() => setSelectedAgent(null)}
+                                        onTogglePause={toggleAgentPause}
+                                    />
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
+
             </main >
 
             <Footer />
