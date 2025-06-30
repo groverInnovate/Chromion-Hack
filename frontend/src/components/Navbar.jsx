@@ -7,7 +7,7 @@ const Navbar = () => {
 
   const [currentPath, setCurrentPath] = useState("");
   const { openHelp } = useHelpBox();
-  const { address, connectWallet } = useWallet();
+  const { address, connectWallet, isConnecting, getShortAddress } = useWalletConnection();
 
   useEffect(() => {
     setCurrentPath(window.location.pathname);
@@ -20,7 +20,9 @@ const Navbar = () => {
   return (
     <div className="flex justify-between items-center px-6 md:px-16 py-4 absolute top-0 left-0 w-full z-20">
       <div className="flex items-center gap-2">
-        <img src={logo} alt="Tradesynth Logo" className="w-10 h-10 object-contain" />
+        <a href="/">
+          <img src={logo} alt="Tradesynth Logo" className="h-20 object-contain cursor-pointer" />
+        </a>
       </div>
 
       <div className="hidden md:flex gap-8 text-white text-sm md:text-base">
@@ -35,8 +37,12 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        <button onClick={connectWallet} disabled={!!address} className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
-          {address ? `Connected` : "Connect Wallet"}
+        <button
+          onClick={connectWallet}
+          disabled={isConnecting || !!address}
+          className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isConnecting ? "Connecting..." : address ? `Connected: ${getShortAddress(address)}` : "Connect Wallet"}
         </button>
       </div>
     </div>
