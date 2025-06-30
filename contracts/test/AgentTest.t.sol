@@ -4,13 +4,14 @@ pragma solidity 0.8.20;
 import {Test, console} from "forge-std/Test.sol";
 import {AgentFactory} from "../src/AgentFactory.sol";
 import {Agent} from "../src/Agent.sol";
-import {DeployAgent} from "../script/DeployAgent.s.sol";
+import {DeployInfrastructure} from "../script/DeployInfrastructure.s.sol";
 import {Platform} from "../src/PlatformType.sol";
 import {MockDAI} from "../src/mocks/MockDAI.sol";
 import {MockMKR} from "../src/mocks/MockMKR.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
 import {MockAMM} from "../src/amm/MockAMM.sol";
 import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {DeployMocks} from "../script/DeployMocks.s.sol";
 
 contract AgentTest is Test {
     /*//////////////////////////////////////////////////////////////
@@ -18,7 +19,7 @@ contract AgentTest is Test {
     //////////////////////////////////////////////////////////////*/
     AgentFactory factory;
     Agent agent;
-    DeployAgent deployer;
+    DeployInfrastructure deployer;
     MockDAI dai;
     MockMKR mkr;
     MockWETH weth;
@@ -42,23 +43,48 @@ contract AgentTest is Test {
     function setUp() external {
         signerPrivateKey = 0xA11CE;
         authorizedSigner = vm.addr(signerPrivateKey);
+
         vm.deal(owner, INITIAL_BALANCE);
 
-        deployer = new DeployAgent();
-        (factory, agent) = deployer.run();
-        AgentFactory.AgentInfo memory agentInfo = factory.getAgentInfo(
-            owner,
-            0
-        );
+        deployer = new DeployInfrastructure();
+        (factory, dai, weth, mkr, mockAMM) = deployer.run();
+
+        address[] memory tokenArray = new address[](3);
+        tokenArray[0] = address(dai);
+        tokenArray[1] = address(weth);
+        tokenArray[2] = address(mkr);
+
         vm.startPrank(owner);
+        agent = factory.createAgent{value: 1 ether}(
+            tokenArray,
+            Platform.Twitter,
+            authorizedSigner,
+            address(mockAMM)
+        );
+
+        uint256 liquidityAmount = block.chainid == 31337
+            ? 100_000 ether
+            : 0.15 ether;
+
+        dai.mint(address(agent), liquidityAmount);
+        mkr.mint(address(agent), liquidityAmount);
+        weth.mint(address(agent), liquidityAmount);
+
+        (bool success, ) = address(agent).call{value: liquidityAmount * 3}("");
+        require(success, "Failed to transfer liquidity ETH");
+
+        agent.setupPoolsAndLiquidity(tokenArray, liquidityAmount);
+
         agent.addFunds{value: 1_000 ether}();
         vm.stopPrank();
+
+        dai.mint(owner, INITIAL_BALANCE);
+        weth.mint(owner, INITIAL_BALANCE);
+        mkr.mint(owner, INITIAL_BALANCE);
+
         vm.deal(user, 10 ether);
         vm.deal(user2, 10 ether);
-        dai = MockDAI(agentInfo.tokens[0]);
-        weth = MockWETH(agentInfo.tokens[1]);
-        mkr = MockMKR(agentInfo.tokens[2]);
-        mockAMM = MockAMM(payable(agent.getMockAMM()));
+
         testTradeData = Agent.TradeData({
             tokenOut: address(dai),
             amountIn: 1 ether,
@@ -82,7 +108,9 @@ contract AgentTest is Test {
         assertEq(agentInfo.tokens[0], address(dai));
         assertEq(agentInfo.tokens[1], address(weth));
         assertEq(agentInfo.tokens[2], address(mkr));
-        assertEq(agentInfo.amountInvested, 1 ether);
+
+        uint256 expectedAmount = 1 ether;
+        assertEq(agentInfo.amountInvested, expectedAmount);
         assertEq(uint256(agentInfo.platformType), uint256(Platform.Twitter));
     }
 
@@ -163,15 +191,14 @@ contract AgentTest is Test {
     function testWithdrawFunds() external {
         uint256 userInitialBalance = owner.balance;
         uint256 agentInitialBalance = address(agent).balance;
+        uint256 expectedWithdraw = 1 ether + 1_000 ether;
         vm.startPrank(owner);
         agent.withdrawFunds();
         vm.stopPrank();
         uint256 userFinalBalance = owner.balance;
         uint256 agentFinalBalance = address(agent).balance;
-        assertEq(
-            userFinalBalance - userInitialBalance,
-            agentInitialBalance - agentFinalBalance
-        );
+        assertEq(userFinalBalance - userInitialBalance, expectedWithdraw);
+        assertEq(agentInitialBalance - agentFinalBalance, expectedWithdraw);
     }
 
     function testAddFunds() external {
@@ -304,7 +331,7 @@ contract AgentTest is Test {
         uint256 swapAmount = 0.1 ether;
 
         uint256 expectedOutput = mockAMM.getAmountOut(token, swapAmount);
-        uint256 minAmountOut = expectedOutput + 1; 
+        uint256 minAmountOut = expectedOutput + 1;
 
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
@@ -317,7 +344,7 @@ contract AgentTest is Test {
         bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
         vm.startPrank(authorizedSigner);
-        vm.expectRevert(); 
+        vm.expectRevert();
         agent.executeSwap(trade, sig);
         vm.stopPrank();
     }
@@ -327,7 +354,7 @@ contract AgentTest is Test {
         uint256 swapAmount = 0.1 ether;
 
         uint256 expectedOutput = mockAMM.getAmountOut(token, swapAmount);
-        uint256 minAmountOut = expectedOutput / 2; 
+        uint256 minAmountOut = expectedOutput / 2;
 
         Agent.TradeData memory trade = Agent.TradeData({
             tokenOut: token,
@@ -376,7 +403,7 @@ contract AgentTest is Test {
 
     function testExecuteSwapWithLargeAmount() external {
         address token = address(dai);
-        uint256 swapAmount = 10 ether; 
+        uint256 swapAmount = 10 ether;
 
         if (swapAmount > agent.getUserFunds()) {
             vm.startPrank(owner);
@@ -521,6 +548,7 @@ contract AgentTest is Test {
     }
 
     function testExecuteSwapWithInsufficientFunds() external {
+        // Withdraw all agent funds first
         vm.startPrank(owner);
         agent.withdrawFunds();
         vm.stopPrank();
@@ -537,7 +565,7 @@ contract AgentTest is Test {
         bytes memory sig = _signTradeData(trade, signerPrivateKey);
 
         vm.startPrank(authorizedSigner);
-        vm.expectRevert(); 
+        vm.expectRevert();
         agent.executeSwap(trade, sig);
         vm.stopPrank();
     }

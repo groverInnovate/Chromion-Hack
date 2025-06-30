@@ -1,27 +1,113 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import AgentControlBox from "../components/AgentCardBox";
+import AgentControlBox from "../components/AgentControlBox";
 import AgentCard from "./AgentCard";
+import { useWalletConnection } from "../hooks/useWalletConnection.js";
+import { getUserAgents, getAgentPausedState, getAgentFunds } from "../utils/AgentInteractions.js";
+import { getTokenBalance, getTokenSymbol } from "../utils/TokenUtils.js";
+import { toast } from "react-toastify";
+import { ethers } from "ethers";
+import TransactionProcessingModal from "../components/TransactionProcessingModal";
 
 const ProfilePage = () => {
-    const [agents, setAgents] = useState([
-        { id: 1, name: "Agent 1", description: "Scans exchanges for ETH price differences", paused: false },
-        { id: 2, name: "Agent 2", description: "Monitors DeFi pools", paused: true },
-    ]);
+    const { address, signer } = useWalletConnection();
+    const [agents, setAgents] = useState([]);
     const [selectedAgent, setSelectedAgent] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [showProcessing, setShowProcessing] = useState(false);
 
-    const toggleAgentPause = (id) => {
-        setAgents((prev) =>
-            prev.map((agent) =>
-                agent.id === id ? { ...agent, paused: !agent.paused } : agent
-            )
-        );
+    const loadUserAgents = useCallback(async () => {
+        try {
+            setLoading(true);
+            const userAgents = await getUserAgents(address, signer);
+            const agentsWithDetails = await Promise.all(
+                userAgents.map(async (agentInfo, index) => {
+                    const isPaused = await getAgentPausedState(agentInfo.agentAddress, signer);
+                    const funds = await getAgentFunds(agentInfo.agentAddress, signer);
+
+                    const tokenDetails = await Promise.all(
+                        agentInfo.tokens.map(async (tokenAddress) => {
+                            try {
+                                const symbol = await getTokenSymbol(tokenAddress, signer);
+                                const balance = await getTokenBalance(tokenAddress, agentInfo.agentAddress, signer);
+                                return {
+                                    address: tokenAddress,
+                                    symbol: symbol,
+                                    balance: balance
+                                };
+                            } catch (error) {
+                                console.error(`Error getting token details for ${tokenAddress}:`, error);
+                                return {
+                                    address: tokenAddress,
+                                    symbol: 'Unknown',
+                                    balance: '0'
+                                };
+                            }
+                        })
+                    );
+
+                    return {
+                        id: index,
+                        name: `Agent ${index + 1}`,
+                        description: `Platform: ${getPlatformName(agentInfo.platformType)}`,
+                        paused: isPaused,
+                        address: agentInfo.agentAddress,
+                        platformType: agentInfo.platformType,
+                        amountInvested: ethers.formatEther(agentInfo.amountInvested),
+                        currentFunds: funds,
+                        tokens: agentInfo.tokens,
+                        tokenDetails: tokenDetails
+                    };
+                })
+            );
+            setAgents(agentsWithDetails.reverse());
+        } catch (error) {
+            console.error("Error loading agents:", error);
+            toast.error("Failed to load agents");
+        } finally {
+            setLoading(false);
+        }
+    }, [address, signer]);
+
+    useEffect(() => {
+        if (address && signer) {
+            loadUserAgents();
+        }
+    }, [loadUserAgents, address, signer]);
+
+    const getPlatformName = (platformType) => {
+        switch (platformType) {
+            case 0: return "Telegram";
+            case 1: return "Twitter";
+            case 2: return "Discord";
+            default: return "Unknown";
+        }
+    };
+
+    const handleAgentUpdate = () => {
+        loadUserAgents();
+    };
+
+    // Remove agent from UI immediately after suspension
+    const handleAgentSuspended = (agentAddress) => {
+        setAgents(prev => prev.filter(a => a.address !== agentAddress));
+        setSelectedAgent(null);
+    };
+
+    // Set agent display to zero after suspension (if modal is still open)
+    const handleZeroAgentDisplay = (agentAddress) => {
+        setAgents(prev => prev.map(a => a.address === agentAddress ? {
+            ...a,
+            currentFunds: "0",
+            tokenDetails: a.tokenDetails.map(t => ({ ...t, balance: "0" }))
+        } : a));
     };
 
     return (
         <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
             <Navbar />
+            {showProcessing && <TransactionProcessingModal />}
 
             <div className="absolute bottom-0 left-[10px] md:left-[1350px] transform translate-x-[-20%] animate-float translate-y-[40%] opacity-70 z-[1]">
                 <div className="relative">
@@ -113,22 +199,19 @@ const ProfilePage = () => {
                         />
                     </div>
                 </div>
-                <div className="w-full max-w-6xl bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-20 text-white shadow-xl flex flex-col md:flex-row gap-10">
+                <div className="w-full max-w-6xl bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-20 text-white shadow-xl">
 
-                    <div className="flex flex-col items-center md:items-start text-center md:text-center ml-4 gap-2 md:w-1/3">
+                    <div className="flex flex-col items-center text-center mb-8">
                         <img
                             src="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=avatar"
                             alt="Profile Avatar"
                             className="w-32 h-32 rounded-full border-4 border-white shadow-md"
                         />
-                        <h2 className="text-4xl font-bold text-center pt-2 pb-4 bg-white text-transparent bg-clip-text">
-                            Username
-                        </h2>
-                        <div className="mt-2 bg-white text-black px-4 py-2 rounded-md text-sm inline-block">
-                            0x8kqr...FNUo
+                        <div className="mt-4 bg-white text-black px-4 py-2 rounded-md text-sm inline-block">
+                            {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "Not Connected"}
                         </div>
                         <a
-                            href="https://etherscan.io/address/0x8kqr...FNUo"
+                            href={address ? `https://etherscan.io/address/${address}` : "#"}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-purple-400 text-sm py-4 underline hover:text-purple-300"
@@ -137,33 +220,16 @@ const ProfilePage = () => {
                         </a>
                     </div>
 
-                    <div className="flex-1 space-y-8 ml-8 text-white/90 text-[20px] text-sm">
-                        {/*
+                    <div className="space-y-8 text-white/90 text-[20px] text-sm">
                         <div>
-                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Bio</h3>
-                            <p className="leading-relaxed transition opacity-0 animate-slideInBottom delay-[400ms]">
-                                This is your AI trader profile. Customize it to personalize your
-                                trading agent and public identity. Others may view this on public leaderboards.
-                            </p>
-                        </div>
-
-                        <div>
-                            <h3 className="text-[30px] font-semibold text-purple-300 mb-4 ">Preferences</h3>
-                            <ul className="list-disc list-inside leading-relaxed transition opacity-0 animate-slideInBottom delay-[400ms]">
-                                <li>Execution Mode: Manual</li>
-                                <li>Preferred Networks: Ethereum, Arbitrum</li>
-                                <li>Favourite Pairs: ETH/USDC, BTC/ETH</li>
-                            </ul>
-                        </div> */}
-
-                        <div>
-                            <h3 className="text-[30px] font-semibold pt-8 text-purple-300 mb-10 ">Your Agents</h3>
-                            {agents.length > 0 ? (
-                                <div className="grid grid-cols-1 gap-6">
-                                    {agents.map((agent, index) => (
+                            <h3 className="text-[30px] font-semibold text-purple-300 mb-10">Your Agents</h3>
+                            {loading ? (
+                                <p className="text-white/60">Loading agents...</p>
+                            ) : agents.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {agents.map((agent) => (
                                         <AgentCard
                                             key={agent.id}
-                                            index={index}
                                             agent={agent}
                                             onClick={setSelectedAgent}
                                         />
@@ -174,14 +240,14 @@ const ProfilePage = () => {
                             )}
 
                             {selectedAgent && (
-                                <>
-                                    <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-[999]" />
-                                    <AgentControlBox
-                                        agent={selectedAgent}
-                                        onClose={() => setSelectedAgent(null)}
-                                        onTogglePause={toggleAgentPause}
-                                    />
-                                </>
+                                <AgentControlBox
+                                    agent={selectedAgent}
+                                    onClose={() => setSelectedAgent(null)}
+                                    onAgentUpdate={handleAgentUpdate}
+                                    onAgentSuspended={handleAgentSuspended}
+                                    onZeroAgentDisplay={handleZeroAgentDisplay}
+                                    setShowProcessing={setShowProcessing}
+                                />
                             )}
                         </div>
                     </div>

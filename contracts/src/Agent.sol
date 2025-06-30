@@ -67,6 +67,7 @@ contract Agent is ReentrancyGuard {
     string private constant version = "1";
     uint256 immutable chainId;
     address private immutable verifyingContract;
+    address[] private supportedTokens;
     bytes32 private constant EIP712_DOMAIN_TYPEHASH =
         keccak256(
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
@@ -166,6 +167,26 @@ contract Agent is ReentrancyGuard {
                 verifyingContract
             )
         );
+        supportedTokens = _tokens;
+    }
+
+    /// @notice Sets up pools and adds initial liquidity for all supported tokens
+    /// @param _tokens Array of token addresses to create pools for
+    /// @param _liquidityAmount Amount of ETH and tokens to add as liquidity
+    function setupPoolsAndLiquidity(
+        address[] memory _tokens,
+        uint256 _liquidityAmount
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            address token = _tokens[i];
+
+            IERC20(token).approve(address(i_mockAMM), type(uint256).max);
+
+            i_mockAMM.addLiquidity{value: _liquidityAmount}(
+                token,
+                _liquidityAmount
+            );
+        }
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -373,4 +394,15 @@ contract Agent is ReentrancyGuard {
     function getMockAMM() external view returns (address) {
         return address(i_mockAMM);
     }
+
+    /// @notice Returns the array of supported token addresses
+    function getSupportedTokens() external view returns (address[] memory) {
+        return supportedTokens;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            RECEIVE & FALLBACK
+    //////////////////////////////////////////////////////////////*/
+    /// @notice Allows the contract to receive ETH
+    receive() external payable {}
 }

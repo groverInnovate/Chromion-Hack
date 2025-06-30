@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useHelpBox } from "./HelpBox.jsx";
-import {useWallet} from "../context/WalletContext.jsx";
+import { useHelpBox } from "../hooks/useHelpBox.js";
+import { useWalletConnection } from "../hooks/useWalletConnection.js";
 
 const Navbar = () => {
 
   const [currentPath, setCurrentPath] = useState("");
   const { openHelp } = useHelpBox();
-  const{address,connectWallet}=useWallet();
-  
+  const { address, connectWallet, isConnecting, getShortAddress } = useWalletConnection();
+
   useEffect(() => {
     setCurrentPath(window.location.pathname);
   }, []);
@@ -32,9 +32,13 @@ const Navbar = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        <button onClick={connectWallet} disabled={!!address} className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition">
-    {address ? `Connected` : "Connect Wallet"}
-  </button>
+        <button
+          onClick={connectWallet}
+          disabled={isConnecting}
+          className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isConnecting ? "Connecting..." : address ? `Connected: ${getShortAddress(address)}` : "Connect Wallet"}
+        </button>
       </div>
     </div>
   );

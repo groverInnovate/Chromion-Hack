@@ -1,36 +1,64 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useWalletConnection } from "../hooks/useWalletConnection.js";
+import { getUserAgents } from "../utils/AgentInteractions.js";
+import { getPoolInfo, getTokenBalance } from "../utils/AMMInteractions.js";
+import { toast } from "react-toastify";
+import { ethers } from "ethers";
 
 const TradeHistoryPage = () => {
-    const [trades, setTrades] = useState([]);
+    const { address, signer } = useWalletConnection();
+    const [agents, setAgents] = useState([]);
+    const [poolData, setPoolData] = useState({});
+    const [tokenBalances, setTokenBalances] = useState({});
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        setTimeout(() => {
-            setTrades([
-                {
-                    tokenIn: "ETH",
-                    tokenOut: "USDC",
-                    amountIn: "0.5",
-                    amountOut: "1750",
-                },
-                {
-                    tokenIn: "BTC",
-                    tokenOut: "ETH",
-                    amountIn: "0.1",
-                    amountOut: "1.4",
-                },
-                {
-                    tokenIn: "MATIC",
-                    tokenOut: "USDT",
-                    amountIn: "100",
-                    amountOut: "62",
-                },
-            ]);
+    const loadData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const userAgents = await getUserAgents(address, signer);
+            setAgents(userAgents);
+
+            const tokens = ['DAI', 'WETH', 'MKR'];
+            const poolInfo = {};
+            const balances = {};
+
+            for (const token of tokens) {
+                try {
+                    poolInfo[token] = await getPoolInfo(token, signer);
+                    balances[token] = await getTokenBalance(token, address, signer);
+                } catch (error) {
+                    console.error(`Error loading ${token} data:`, error);
+                    poolInfo[token] = null;
+                    balances[token] = "0";
+                }
+            }
+
+            setPoolData(poolInfo);
+            setTokenBalances(balances);
+        } catch (error) {
+            console.error("Error loading data:", error);
+            toast.error("Failed to load trading data");
+        } finally {
             setLoading(false);
-        }, 1000);
-    }, []);
+        }
+    }, [address, signer]);
+
+    useEffect(() => {
+        if (address && signer) {
+            loadData();
+        }
+    }, [loadData, address, signer]);
+
+    const getPlatformName = (platformType) => {
+        switch (platformType) {
+            case 0: return "Telegram";
+            case 1: return "Twitter";
+            case 2: return "Discord";
+            default: return "Unknown";
+        }
+    };
 
     return (
         <div className="flex flex-col min-h-screen bg-[#000000] overflow-hidden relative">
@@ -96,6 +124,11 @@ const TradeHistoryPage = () => {
             </div>
 
             <main className="flex-grow flex flex-col items-center justify-start pt-36 pb-20 px-6 z-10 relative w-full">
+                <div className="w-full max-w-5xl mx-auto mb-8">
+                    <div className="bg-purple-500/20 border border-purple-400/40 text-purple-300 rounded-md px-4 py-3 text-center text-lg font-semibold mb-6 animate-pulse">
+                        Trade history and analytics coming soon!
+                    </div>
+                </div>
 
                 <div>
                     <div className="absolute top-[120px] md:top-[20px] left-[280px] md:left-[520px] transform translate-x-[-50%] animate-float translate-y-[-50%] opacity-50 z-[-1]">
@@ -181,38 +214,98 @@ const TradeHistoryPage = () => {
                 </div>
 
                 <h1 className="text-4xl md:text-6xl font-bold mb-6 py-1 text-center leading-tight bg-gradient-to-r from-[white] via-[#ffffff] to-[#ffffff] text-transparent bg-clip-text opacity-0 animate-slideInTop delay-[400ms]">
-                    Trade History Table
+                    Trading Dashboard
                 </h1>
 
                 {loading ? (
-                    <div className="text-white/70 text-lg">Loading trade history...</div>
-                ) : trades.length === 0 ? (
-                    <div className="text-white/70 text-lg">No trades available.</div>
+                    <div className="text-white/70 text-lg">Loading trading data...</div>
                 ) : (
-                    <div className="w-full max-w-5xl mt-10 bg-[#170720]/50 backdrop-blur-md border border-white/30 rounded-2xl py-8 mb-4 shadow-lg  text-white overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-white/10 text-[20px] py-20">
-                                <tr>
-                                    <th className="py-3 px-5">Token In</th>
-                                    <th className="py-3 px-4">Token Out</th>
-                                    <th className="py-3 px-5">Amount In</th>
-                                    <th className="py-3 px-4">Amount Out</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {trades.map((trade, i) => (
-                                    <tr
-                                        key={i}
-                                        className="border-t text-[16px] border-white/10 hover:bg-white/10 transition"
-                                    >
-                                        <td className="py-3 px-5">{trade.tokenIn}</td>
-                                        <td className="py-3 px-4">{trade.tokenOut}</td>
-                                        <td className="py-3 px-5">{trade.amountIn}</td>
-                                        <td className="py-3 px-4">{trade.amountOut}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="w-full max-w-6xl bg-white/5 backdrop-blur-md border border-white/30 rounded-2xl p-20 text-white shadow-xl">
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <h3 className="text-xl font-semibold mb-4">Your Agents</h3>
+                                    <p className="text-3xl font-bold text-purple-400">{agents.length}</p>
+                                    <p className="text-white/60 text-sm">Total Active Agents</p>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <h3 className="text-xl font-semibold mb-4">Total Investment</h3>
+                                    <p className="text-3xl font-bold text-green-400">
+                                        {agents.reduce((total, agent) => total + parseFloat(ethers.formatEther(agent.amountInvested)), 0).toFixed(2)} ETH
+                                    </p>
+                                    <p className="text-white/60 text-sm">Across All Agents</p>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <h3 className="text-xl font-semibold mb-4">Active Platforms</h3>
+                                    <p className="text-3xl font-bold text-blue-400">
+                                        {new Set(agents.map(agent => getPlatformName(agent.platformType))).size}
+                                    </p>
+                                    <p className="text-white/60 text-sm">Different Platforms</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <h3 className="text-xl font-semibold mb-4">Token Balances</h3>
+                                    <div className="space-y-3">
+                                        {Object.entries(tokenBalances).map(([token, balance]) => (
+                                            <div key={token} className="flex justify-between items-center">
+                                                <span className="text-white/70">{token}</span>
+                                                <span className="font-mono">{parseFloat(balance).toFixed(4)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                    <h3 className="text-xl font-semibold mb-4">Pool Information</h3>
+                                    <div className="space-y-3">
+                                        {Object.entries(poolData).map(([token, pool]) => (
+                                            <div key={token} className="border-b border-white/10 pb-2">
+                                                <h4 className="font-semibold text-purple-300">{token}</h4>
+                                                {pool ? (
+                                                    <div className="text-sm text-white/70 space-y-1">
+                                                        <div>ETH Reserve: {parseFloat(pool.ethReserve).toFixed(4)}</div>
+                                                        <div>Token Reserve: {parseFloat(pool.tokenReserve).toFixed(4)}</div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-sm text-red-400">Pool not available</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6">
+                                <h3 className="text-xl font-semibold mb-4">Agent Details</h3>
+                                <div className="space-y-4">
+                                    {agents.map((agent, index) => (
+                                        <div key={index} className="border border-white/20 rounded-lg p-4">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h4 className="font-semibold">Agent {index + 1}</h4>
+                                                    <p className="text-white/60 text-sm">
+                                                        Platform: {getPlatformName(agent.platformType)} |
+                                                        Investment: {ethers.formatEther(agent.amountInvested)} ETH
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-white/70">
+                                                        {agent.tokens.length} tokens supported
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {agents.length === 0 && (
+                                        <p className="text-white/60 text-center py-8">No agents found</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main>

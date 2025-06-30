@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useState } from "react";
 import HelpBox from "../pages/Help";
 
 const HelpBoxContext = createContext();
-
-export const useHelpBox = () => useContext(HelpBoxContext);
 
 export const HelpBoxProvider = ({ children }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
